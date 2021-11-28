@@ -1,0 +1,54 @@
+{% extends 'home.html' %}
+
+{% block head %}
+
+
+<div class="container">
+    <table class="table table-striped">
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Status</th>
+        </tr>
+
+        {% for order_item in order_pr_obj %}
+        <tr>
+            <th>{{order_item.product.pr_name}}</th>
+            <th>{{order_item.quantity}}</th>
+            <th>{{order_item.price}}</th>
+            {% if order_item.order.status == 1 %}
+            <td>Not packed</td>
+            {% elif order_item.order.status == 2 %}
+            <td>Packed</td>
+            {% elif order_item.order.status == 3 %}
+            <td>Shipped</td>
+            {% elif order_item.order.status == 4 %}
+            <td class="text-success">Delivered</td>
+            {% elif order_item.order.status == 5 %}
+            <td class="text-danger">Canceled</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if status == 2 or status == 1 or status == 3 %}
+    <button id='cancel' class="btn btn-danger">Cancel order</button>
+    {% endif %}
+    <input id='hid' type="hidden" value="{{order_id}}">
+</div>
+
+<script>
+    $(function(){
+    $('#cancel').click(function(){
+        order_id = $('#hid').val()
+        
+        data = {'order_id':order_id,'csrfmiddlewaretoken':'{{ csrf_token }}'}
+        $.post('cancel_order/',data,function(res){
+            alert('Order canceled')
+        })
+    })
+
+})
+</script>
+
+{% endblock head %}

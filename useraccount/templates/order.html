@@ -1,0 +1,53 @@
+{% extends 'home.html' %}
+
+{% block head %}
+
+
+<div class="container text-center">
+    <h4>Order summary</h4>
+
+    
+    
+    <table class="table table-striped">
+        <tr>
+            <th>Order Id</th>
+            <th>Date ordered</th>
+            <th>Total Amount</th>
+            <th>Status</th>
+            <th>Details</th>
+            
+        </tr>
+        
+        {% for order in order_obj %}
+        <tr>
+            <td>{{order.id}}</td>
+            <td>{{order.date_ordered}}</td>
+            <td>{{order.total_amount}}</td>
+            {% if order.status == 1 %}
+            <td>Not packed</td>
+            {% elif order.status == 2 %}
+            <td>Packed</td>
+            {% elif order.status == 3 %}
+            <td class="text-warning">Shipped</td>
+            {% elif order.status == 4 %}
+            <td class="text-success">Delivered</td>
+            {% elif order.status == 5 %}
+            <td class="text-danger">Canceled</td>
+            {% endif %}
+            
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" id="" value="{{order.id}}">
+                <td><button class="btn btn-info">View Details</button></td>
+            </form>
+        </tr>
+        {% endfor %}
+    </table>
+    
+
+    <form action="" method="POST">
+
+    </form>
+</div>
+
+{% endblock head %}

@@ -1,0 +1,21 @@
+{% extends 'home.html' %}
+
+{% block head %}
+
+
+<div class="container text-center">
+    
+
+    <h1>Update</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{form.as_p}}
+        <button class="btn btn-dark">Update</button>
+    </form>
+    </div>
+
+
+
+
+
+{% endblock head %}

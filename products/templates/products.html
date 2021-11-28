@@ -1,0 +1,40 @@
+{% extends 'home.html' %}
+
+{% block head %}
+
+{% load static %}
+<script src="{% static 'js/products.js' %}"></script>
+
+<div class="container text-center product" id='product'>
+    <div class="row">
+      <!-- <h1>haiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii</h1> -->
+        {% for item in products %}
+        <div  class="col-md-4 p-3 col-sm-2 ">
+            <div class="card text-center mx-auto" style="width: 18rem;">
+                <img style="width: 142px;height: 256px;" class="ml-5 mt-4" src="/media/{{item.pr_image}}" alt="Card image cap">
+                <div class="card-body">
+                  <h5 class="card-title">{{item.pr_name}} - ₹{{item.pr_price}}</h5>
+                  <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                  {% if item.pr_quantity == 0 %}
+                  <h6 class="text-danger">Outof stock</h6>
+                  {% elif item.pr_quantity < 6 %}
+                  <h6 class="text-danger">Hurry only {{item.pr_quantity}} stock left</h6>
+                  {% endif %}
+                  <a href="#" data-id={{item.id}} class="btn btn-danger butn">Add to cart</a>
+                  <a href="{% url 'products_details' id=item.id %}" class="btn btn-primary">Details</a>
+                </div>
+              </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="container text-center main">
+  <div id='parent' class="row">
+
+  </div>
+</div>
+
+
+
+{% endblock head %}

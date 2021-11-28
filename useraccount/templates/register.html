@@ -1,0 +1,15 @@
+{% extends 'home.html' %}
+{% block head %}
+
+<div class="container text-center">
+    
+
+<h1>Register</h1>
+<form action="" method="POST">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button class="btn btn-dark">Sign Up</button>
+</form>
+<a class="text-dark" href="{% url 'login' %}">Already have an account! Login here</a>
+</div>
+{% endblock head %}
