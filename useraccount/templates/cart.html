@@ -7,38 +7,42 @@
 <div class="container">
     <h1 class="ml-5">Cart
     </h1>
-    <table class="table table-striped">
-        <tr>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            
-        </tr>
-        {% for item in data %}
-        <tr id={{item.product_id}}>
-            <td>
-                {% if item.product.pr_quantity == 0 %}
-                    {{item.product.pr_name}} <h6 class="text-danger">Out of stock</h6>
-                {% elif item.quantity > item.product.pr_quantity %}
-                {{item.product.pr_name}} <h6 class="text-danger">Only {{item.product.pr_quantity}} stock available</h6>
-                {% else %}
-                {{item.product.pr_name}}
-                {% endif %}
-            </td>
-            <td>₹{{item.product.pr_price}}</td>
-            <td>{{item.quantity}}</td>
-            
-            <td><span data-id="{{item.product_id}}" class="btn btn-warning text-dark font-weight-bolder plus">+</span></td>
-            <td><span data-id="{{item.product_id}}" class="btn btn-warning text-dark font-weight-bolder minus">-</span></td>
-        </tr>
-        {% endfor %}
-        <h5 id=total_price>Total = {{total}}</h5>
+    {% if data %}
+        <table class="table table-striped">
+            <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                
+            </tr>
+            {% for item in data %}
+            <tr id={{item.product_id}}>
+                <td>
+                    {% if item.product.pr_quantity == 0 %}
+                        {{item.product.pr_name}} <h6 class="text-danger">Out of stock</h6>
+                    {% elif item.quantity > item.product.pr_quantity %}
+                    {{item.product.pr_name}} <h6 class="text-danger">Only {{item.product.pr_quantity}} stock available</h6>
+                    {% else %}
+                    {{item.product.pr_name}}
+                    {% endif %}
+                </td>
+                <td>₹{{item.product.pr_price}}</td>
+                <td>{{item.quantity}}</td>
+                
+                <td><span data-id="{{item.product_id}}" class="btn btn-warning text-dark font-weight-bolder plus">+</span></td>
+                <td><span data-id="{{item.product_id}}" class="btn btn-warning text-dark font-weight-bolder minus">-</span></td>
+            </tr>
+            {% endfor %}
+            <h5 id=total_price>Total = {{total}}</h5>
 
-    </table>
-    <div>
-        <a href="{% url 'checkout' %}"><button class="btn btn-info">Check out</button></a>
-        
-    </div>
+        </table>
+        <div>
+            <a href="{% url 'checkout' %}"><button class="btn btn-info">Check out</button></a>
+            
+        </div>
+    {% else %}
+        <p>No items in your cart.Please add some..</p>
+    {% endif %}
 </div>
 
 
