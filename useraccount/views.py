@@ -1,16 +1,24 @@
+from datetime import timedelta
+import email
+import imp
 import json
+import re
+from sre_constants import SUCCESS
+import django
 from django.contrib import auth
+from django.views import View
 import razorpay
 from django.shortcuts import redirect, render
-from django.http import HttpResponse
-from .forms import RegisterForm,LoginForm,UpdateProfileForm
+from django.http import HttpResponse, HttpResponseRedirect
+from .forms import ForgotPasswordForm, RegisterForm,LoginForm, ResetPasswordForm,UpdateProfileForm, VerifyOtpForm
 from django.contrib.auth import authenticate,login,logout
 from .models import *
 from django.http import JsonResponse
 from products.models import Products
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-
+import random
+from django.contrib import messages
 
 # Authorizing razorpay client
 
@@ -32,7 +40,8 @@ def view_login(request):
             login(request,user)
             return redirect('home')
         else:
-            return HttpResponse('error')
+            messages.add_message(request, messages.WARNING, 'Invalid username or password')
+            return redirect('login')
 
 # user registration
 def view_reg(request):
@@ -55,7 +64,117 @@ def view_reg(request):
 # user logout
 def view_logout(request):
     logout(request)
-    return redirect('home')
+    return redirect('login')
+
+# Forgot password
+def forgot_password(request):
+    try:
+        context = {}
+        if request.method == 'GET':
+
+            form_obj = ForgotPasswordForm()
+            context['form'] = form_obj
+            return render(request, 'forgot_password.html', context)
+        elif request.method == 'POST':
+            form_obj = ForgotPasswordForm(data=request.POST)
+            if form_obj.is_valid():
+
+                email = form_obj.cleaned_data['email']
+                db_logintable = LoginTable.objects.filter(email = email).first()
+                if db_logintable:
+
+                    request.session['email'] = email
+                    otp = generate_otp()
+                    is_otp_saved = save_otp(email, int(otp))
+                    if is_otp_saved:
+
+                        print('Your otp is :: ' + str(otp))
+                        form_obj = VerifyOtpForm()
+                        context['form'] = form_obj
+                        return render(request, 'verify_otp.html', context)
+                    else:
+                        messages.add_message(request, messages.WARNING, 'Otp not send. Please send again')
+                        return HttpResponseRedirect(request.path_info)
+                else:
+                  
+                    messages.add_message(request, messages.WARNING, 'This email id does not belongs to our company')
+                    return HttpResponseRedirect(request.path_info)
+
+    except Exception as e:
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return HttpResponseRedirect(request.path_info)
+
+def verify_otp(request):
+    try:
+        context = {}
+        if request.method == "GET":
+            form_obj = VerifyOtpForm()
+            context['form'] = form_obj
+            return render(request, 'verify_otp.html', context)
+        elif request.method == "POST":
+            form_obj = VerifyOtpForm(data=request.POST)
+            if form_obj.is_valid():
+
+                otp = form_obj.cleaned_data['otp']
+                if 'email' in request.session:
+                    email = request.session['email']
+                
+                is_verified, msg = verify_email_otp(email, otp)
+                if is_verified:
+                    form_obj = ResetPasswordForm()
+                    context['form'] = form_obj
+                    messages.add_message(request, messages.SUCCESS, msg)
+                    return render(request, 'reset_password.html', context)
+
+                else:
+                    messages.add_message(request, messages.WARNING, msg)
+                    return HttpResponseRedirect(request.path_info)
+               
+    except Exception as e:
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return HttpResponseRedirect(request.path_info)
+
+
+def reset_password(request):
+    try:
+        context = {}
+        if request.method == "GET":
+            return render(request, 'reset_password.html')
+
+        elif request.method == "POST":
+            form_obj = ResetPasswordForm(data=request.POST)
+            if form_obj.is_valid():
+                password = form_obj.cleaned_data['password']
+                if 'email' in request.session:
+                    email = request.session['email']
+                
+                db_otp = CustomerOtp.objects.filter(email = email).first()
+                if db_otp:
+                    if db_otp.verified == True:
+                        db_logintable = LoginTable.objects.filter(email = email).first()
+                        if db_logintable:
+                            db_logintable.set_password(password)
+                            db_logintable.save()
+                            messages.add_message(request, messages.SUCCESS, 'Password reset success. Please login to continue')
+                            return redirect('login')
+                        else:
+                            messages.add_message(request, messages.WARNING, 'User data not found')
+                            return HttpResponseRedirect(request.path_info)
+                
+                    else:
+                        
+                        messages.add_message(request, messages.WARNING, 'You are not verified the otp to reset the password')
+                        return HttpResponseRedirect(request.path_info)
+                
+                else:
+                    messages.add_message(request, messages.WARNING, 'You are not verified the otp to reset the password')
+                    return HttpResponseRedirect(request.path_info)
+    
+    
+
+    except Exception as e:
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return HttpResponseRedirect(request.path_info)
 
 # user profile
 def view_profile(request):
@@ -314,6 +433,10 @@ def paymenthandler(request):
                             product_obj = Products.objects.get(id=item.product_id)
                             product_obj.pr_quantity -= item.quantity
                             product_obj.save()
+                        
+                        if product_obj.pr_quantity == 0:
+                            product_obj.out_of_stock = True
+                            product_obj.save()
                             
                         return HttpResponse('success order placed')
                     else:
@@ -367,3 +490,51 @@ def cancel_order(request):
     order_obj.save()
     return JsonResponse('hai',safe=False)
 
+def generate_otp():
+    numbers = '1234567890'
+    ot = random.choices(numbers, k = 4)
+    otp=''.join(ot)
+    otp = 1234
+    return otp
+
+def save_otp(email, otp):
+    try:
+        db_otp = CustomerOtp.objects.filter(email = email).first()
+        if db_otp:
+            db_otp.otp = otp
+            db_otp.created = datetime.now()
+            db_otp.modified = datetime.now()
+            db_otp.verified = False
+            db_otp.save()
+        else:
+            new_otp = CustomerOtp.objects.create(email=email, otp=otp, created=datetime.now(), modified=datetime.now(), verified=False)
+            new_otp.save()
+
+        return True
+
+    except Exception as e:
+        return False
+
+def verify_email_otp(email, otp):
+    try:
+        db_otp = CustomerOtp.objects.filter(email=email).first()
+        if db_otp:
+            
+            current_time = datetime.now().replace(tzinfo=timezone.utc)
+            otp_created_time = db_otp.created.replace(tzinfo=timezone.utc)
+            otp_expire_time = otp_created_time + timedelta(minutes=15)
+            if current_time <= otp_expire_time:
+                if str(db_otp.otp) == str(otp):
+                    db_otp.verified = True
+                    db_otp.save()
+                    return True, 'OTP verified, You can now reset password'
+                else:
+                    return False, 'Invalid OTP, Please enter correct OTP'
+            else:
+                return False, 'OTP expired. Please send again'
+        else:
+            return False, 'No otp requested yet'
+
+    except Exception as e:
+        print('error-------->>',e)
+        return False, 'Error while verifying otp'

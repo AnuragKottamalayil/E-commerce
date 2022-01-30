@@ -1,6 +1,6 @@
 from django.db import models
 from django.forms.models import ModelForm
-from .models import LoginTable
+from .models import CustomerOtp, LoginTable
 from django import forms
 from django.forms import fields,widgets
 
@@ -43,6 +43,39 @@ class LoginForm(forms.ModelForm):
         labels = {
             "username": "",
             "password": "",
+        }
+class ForgotPasswordForm(forms.ModelForm):
+    class Meta:
+        model = LoginTable
+        fields = ('email',)
+        help_texts = {'email':None}
+        widgets = {
+            'email': forms.TextInput(attrs={'class': 'form-control forgot', 'placeholder': 'Email Id', 'name': 'email', 'required':""}),
+        }
+        labels = {
+            "email": ""   
+        }
+class VerifyOtpForm(forms.ModelForm):
+    class Meta:
+        model = CustomerOtp
+        fields = ('otp',)
+        help_texts = {'otp':None}
+        widgets = {
+            'otp': forms.TextInput(attrs={'class': 'form-control forgot', 'placeholder': '4 digit OTP', 'name': 'otp'}),
+        }
+        labels = {
+            "otp": ""   
+        }
+class ResetPasswordForm(forms.ModelForm):
+    class Meta:
+        model = LoginTable
+        fields = ('password',)
+        help_texts = {'password':None}
+        widgets = {
+            'password': forms.TextInput(attrs={'class': 'form-control forgot', 'placeholder': 'New password', 'name': 'password'}),
+        }
+        labels = {
+            "password": ""   
         }
 
 class UpdateProfileForm(forms.ModelForm):

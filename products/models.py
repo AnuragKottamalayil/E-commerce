@@ -1,3 +1,4 @@
+from pyexpat import model
 from django.db import models
 
 # Create your models here.
@@ -18,6 +19,8 @@ class Products(models.Model):
     pr_price = models.FloatField(verbose_name='product price')
     pr_quantity = models.IntegerField(verbose_name='product quantity')
     pr_image = models.ImageField(upload_to='images/',verbose_name='product image')
+    active = models.BooleanField(default=True, null=True)
+    out_of_stock = models.BooleanField(default=False, null=True)
 
 
     def __str__(self):
@@ -68,6 +71,8 @@ class ProductDetails(models.Model):
     display = models.CharField(max_length=30,choices=DISPLAY,default = 'LCD')
     battery = models.CharField(max_length=20)
     removable_battery = models.CharField(max_length=30,choices=CH,default = 'No')
+    active = models.BooleanField(default=True, null=True)
+    out_of_stock = models.BooleanField(default=False, null=True)
     def __str__(self):
         
         return (self.pr.pr_name) +' '+ (self.color) +' '+ (self.ram) +' '+ (self.storage)

@@ -1,10 +1,12 @@
+import imp
+from pyexpat import model
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.enums import Choices
 from django.db.models.fields import BigIntegerField
 from products.models import Products
 from django.utils import timezone
-
+from datetime import date, datetime
 # Create your models here.
 
 class LoginTable(AbstractUser):
@@ -30,7 +32,7 @@ class Order(models.Model):
     )
     user = models.ForeignKey(LoginTable,on_delete=models.SET_NULL,null=True)
     total_amount = models.FloatField()
-    status = models.IntegerField(max_length=50,choices=STATUS,default=1)
+    status = models.IntegerField(choices=STATUS,default=1)
     date_ordered = models.DateTimeField(default=timezone.now)
     razor_pay_order_id = models.CharField(max_length=50,null=True,blank=True)
     razor_pay_payment_id = models.CharField(max_length=50,null=True,blank=True)
@@ -47,3 +49,10 @@ class OrderProducts(models.Model):
 
     def __str__(self):
         return self.order.user.username
+
+class CustomerOtp(models.Model):
+    email = models.TextField()
+    otp = models.TextField()
+    created = models.DateTimeField(default=datetime.now())
+    modified = models.DateTimeField(default=datetime.now())
+    verified = models.BooleanField(default=False)

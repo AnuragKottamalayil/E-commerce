@@ -15,7 +15,7 @@
                 <div class="card-body">
                   <h5 class="card-title">{{item.pr_name}} - ₹{{item.pr_price}}</h5>
                   <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                  {% if item.pr_quantity == 0 %}
+                  {% if item.pr_quantity == 0 or item.out_of_stock == True %}
                   <h6 class="text-danger">Outof stock</h6>
                   {% elif item.pr_quantity < 6 %}
                   <h6 class="text-danger">Hurry only {{item.pr_quantity}} stock left</h6>

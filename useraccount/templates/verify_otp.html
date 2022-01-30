@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+  	
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	
+		
+	<link rel="stylesheet" href="/static/css/style.css">
+
+	</head>
+	<body>
+	<section class="ftco-section">
+		<div class="container">
+			<div class="row justify-content-center">
+				<!-- <div class="col-md-6 text-center mb-5">
+					<h2 class="heading-section">Login #04</h2>
+				</div> -->
+			</div>
+			<div class="row justify-content-center">
+                {% if messages %}
+                <ul class="messages">
+                    {% for msg in messages %}       
+                    <li>
+                        <div class="alert alert-{{msg.level_tag}}" role="alert">
+                            {{msg.message}}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+				<div class="col-md-12 col-lg-10">
+					<div class="wrap d-md-flex">
+						<div class="img mt-2 ml-3 mb-5" style="height: 290px !important; width: 400px !important; background-image: url(/static/images/otp.jpg)">
+			      </div>
+						<div class="login-wrap p-4 p-md-5">
+			      	<div class="d-flex">
+			      		<div class="w-100">
+			      			<p class="mb-4">Please enter the 4 digit otp we send to your registered email address<p>
+			      		</div>
+								
+			      	</div>
+					
+
+				  <form action="{% url 'verify-otp' %}" method="POST">
+					{% csrf_token %}
+					{{form.as_p}}
+					<!-- <button class="btn btn-dark">Login</button> -->
+					<button style="background-color: #2a454e !important; border:1px solid#2a454e !important"  type="submit" class="form-control btn btn-primary rounded submit px-3">Verify OTP</button>
+					</form>
+		          <p class="text-center mt-2">Not a member? <a style="color: #2a454e;" class="" href="{% url 'register' %}">Sign Up</a></p>
+				  
+		        </div>
+		      </div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<script src="/static/js/jquery.min.js"></script>
+  <script src="/static/js/popper.js"></script>
+  <script src="/static/js/bootstrap.min.js"></script>
+  <script src="/static/js/main.js"></script>
+
+	</body>
+</html>

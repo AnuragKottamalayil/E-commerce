@@ -75,10 +75,21 @@ WSGI_APPLICATION = 'e_commerce.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'e_commerce',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -129,3 +140,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
 RAZOR_KEY_ID = 'rzp_test_1xkJMy9M36FMPL'
 RAZOR_KEY_SECRET = '2AN5hRgzFjn2AtyGQOghvuDX'
+
+DEFAULT_AUTO_FIELD='django.db.models.AutoField'

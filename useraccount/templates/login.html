@@ -1,21 +1,86 @@
-{% extends 'home.html' %}
-{% block head %}
+<!doctype html>
+<html lang="en">
+  <head>
+  	
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
+	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
 
-<div class="container">
-    <h1>login</h1>
-    <div class="row ">
-        <div class="col-md-4"></div>
-        <div class="col-md-4 shadow-sm p-3 mb-5 bg-white rounded">
-            <form action="" method="POST">
-                {% csrf_token %}
-                {{form.as_p}}
-                <button class="btn btn-dark">Login</button>
-            </form>
-            <div class="pt-3"><a class="text-dark" href="{% url 'register' %}">Dont have an account! Sign up here</a></div>
-            
-        </div>
-        <div class="col-md-4"></div>
-    </div>
-</div>
-{% endblock head %}
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	
+		
+	<link rel="stylesheet" href="/static/css/style.css">
+
+	</head>
+	<body>
+	<section class="ftco-section">
+		<div class="container">
+			<div class="row justify-content-center">
+				<!-- <div class="col-md-6 text-center mb-5">
+					<h2 class="heading-section">Login #04</h2>
+				</div> -->
+			</div>
+			<div class="row justify-content-center">
+				{% if messages %}
+                <ul class="messages">
+                    {% for msg in messages %}       
+                    <li>
+                        <div class="alert alert-{{msg.level_tag}}" role="alert">
+                            {{msg.message}}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+				<div class="col-md-12 col-lg-10">
+					<div class="wrap d-md-flex">
+						<div class="img mt-5 ml-3" style="background-image: url(/static/images/vector1.jpg)">
+			      </div>
+						<div class="login-wrap p-4 p-md-5">
+			      	<div class="d-flex">
+			      		<div class="w-100">
+			      			<h3 class="mb-4">Sign In</h3>
+			      		</div>
+								<div class="w-100">
+									<p class="social-media d-flex justify-content-end">
+										<a href="#" class="social-icon d-flex align-items-center justify-content-center"><span class="fa fa-facebook"></span></a>
+										<a href="#" class="social-icon d-flex align-items-center justify-content-center"><span class="fa fa-twitter"></span></a>
+									</p>
+								</div>
+			      	</div>
+						
+
+				  <form action="" method="POST">
+					{% csrf_token %}
+					{{form.as_p}}
+					
+					<button  type="submit" class="form-control btn btn-primary rounded submit px-3">Sign In</button>
+					</form>
+		          <p class="text-center mt-2">Not a member? <a href="{% url 'register' %}">Sign Up</a></p>
+				  <div class="form-group d-md-flex">
+					<div class="w-50 text-left">
+						<label class="checkbox-wrap checkbox-primary mb-0">Remember Me
+								  <input type="checkbox" checked>
+								  <span class="checkmark"></span>
+									</label>
+								</div>
+								<div class="w-50 text-md-right">
+									<a href="{% url 'forgot-password' %}">Forgot Password</a>
+								</div>
+				</div>
+		        </div>
+		      </div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<script src="/static/js/jquery.min.js"></script>
+  <script src="/static/js/popper.js"></script>
+  <script src="/static/js/bootstrap.min.js"></script>
+  <script src="/static/js/main.js"></script>
+
+	</body>
+</html>
+
