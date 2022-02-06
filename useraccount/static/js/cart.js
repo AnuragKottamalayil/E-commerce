@@ -8,34 +8,91 @@ $(function(){
                 cart_qty = res['cart_qty']
                 cart_price = res['cart_price']
                 total = res['total']
-                $('#' + pr_id + ' td').eq(1).html(cart_price);
-                $('#' + pr_id + ' td').eq(2).html(cart_qty);
-                $('#total_price').html('Total = ' + total);
+                total_items = res['total_items']
+                grand_total = res['grand_total']
+                // $('#' + pr_id + ' td').eq(1).html(cart_price);
+                // $('#' + pr_id + ' td').eq(2).html(cart_qty);
+                $('#quantity' + pr_id).text(cart_qty);
+                $('#price' + pr_id).text("₹ " + cart_price);
+                $('#total_price').html("₹ " + total);
+                $('.total_items').html("ITEMS " + total_items);
+                $('#grand_total').html("₹ " + grand_total);
+                
+                
 
             }
             else{
-                alert('No more available')
+                cuteAlert({
+                    type: "info",
+                    title: "Info",
+                    message: "You added maximum limit of items",
+                    img: "img/info.svg",
+                    buttonText: "Okay"
+                  })
             }
         })
 
     })
 })
-// removing cart items
+// removing product from cart
+$(function(){
+    $('.close').click(function(){
+        pr_id = $(this).data('id');
+        data = {'pr_id':pr_id};
+        $.get('remove/',data,function(res){
+            if(res['status'] == true){
+                total = res['total']
+                total_items = res['total_items']
+                grand_total = res['grand_total']
+                $('#' + pr_id).remove();
+                $('#total_price').html("₹ " + total);
+                $('.total_items').html("ITEMS " + total_items);
+                $('#grand_total').html("₹ " + grand_total);
+                
+            }
+            else{
+                total = res['msg']
+                cuteAlert({
+                    type: "error",
+                    title: "Error",
+                    message: msg,
+                    img: "img/error.svg",
+                    buttonText: "Okay"
+                  })
+            }
+        })
+    })
+
+})
+
 $(function(){
     $('.minus').click(function(){
         pr_id = $(this).data('id');
         data = {'pr_id':pr_id,'val':2};
         $.get('plus_minus/',data,function(res){
             if(res['cart_qty'] == 0){
+                total = res['total']
+                total_items = res['total_items']
+                grand_total = res['grand_total']
                 $('#' + pr_id).remove();
+                $('#total_price').html("₹ " + total);
+                $('.total_items').html("ITEMS " + total_items);
+                $('#grand_total').html("₹ " + grand_total);
+                
             }
             else{
                 cart_qty = res['cart_qty']
                 cart_price = res['cart_price']
                 total = res['total']
-                $('#' + pr_id + ' td').eq(1).html(cart_price);
-                $('#' + pr_id + ' td').eq(2).html(cart_qty);
-                $('#total_price').html('Total = ' + total);
+                total_items = res['total_items']
+                grand_total = res['grand_total']
+                // $('#' + pr_id + ' td').eq(1).html(cart_price);
+                // $('#' + pr_id + ' td').eq(2).html(cart_qty);
+                $('#quantity' + pr_id).text(cart_qty);
+                $('#price' + pr_id).text("₹ " + cart_price);
+                $('#total_price').html("₹ " + total);
+                $('.total_items').html("ITEMS " + total_items);
+                $('#grand_total').html("₹ " + grand_total);
             }
         })
     })

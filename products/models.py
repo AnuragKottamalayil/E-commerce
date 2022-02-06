@@ -1,20 +1,21 @@
-from pyexpat import model
+
+
 from django.db import models
 
 # Create your models here.
 
+class Brand(models.Model):
+    name = models.CharField(max_length=200, verbose_name='Brand Name')
+    description = models.CharField(null=True, blank=True, verbose_name='Description')
+
+class Category(models.Model):
+    name = models.CharField(max_length=200, verbose_name='Category Name')
+    description = models.CharField(max_length=200, null=True, blank=True)
+
+
 class Products(models.Model):
-    BRAND = (
-        ('Apple','Apple'),
-        ('Samsung','Samsung'),
-        ('Redmi','Redmi'),
-        ('Realme','Realme'),
-        ('Oppo','Oppo'),
-        ('Vivo','Vivo'),
-        ('Moto','Moto'),
-        ('Oneplus','Oneplus')
-    )
-    pr_brand = models.CharField(max_length=200,verbose_name='Brand',choices=BRAND,default = 'Apple')
+    pr_brand = models.ForeignKey(Brand, verbose_name='Brand Id')
+    pr_category = models.ForeignKey(Category, verbose_name='Category Id')
     pr_name = models.CharField(max_length=200,verbose_name='product name')
     pr_price = models.FloatField(verbose_name='product price')
     pr_quantity = models.IntegerField(verbose_name='product quantity')
@@ -73,6 +74,8 @@ class ProductDetails(models.Model):
     removable_battery = models.CharField(max_length=30,choices=CH,default = 'No')
     active = models.BooleanField(default=True, null=True)
     out_of_stock = models.BooleanField(default=False, null=True)
+
+
     def __str__(self):
         
         return (self.pr.pr_name) +' '+ (self.color) +' '+ (self.ram) +' '+ (self.storage)

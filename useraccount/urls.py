@@ -14,6 +14,7 @@ urlpatterns = [
     path('profile/edit_profile/',edit_profile,name='edit_profile'),
     path('edit_profile_from_checkout/',edit_profile_from_checkout,name='edit_profile_from_checkout'),
     path('cart/plus_minus/',cart_plus_minus,name='cart_plus_minus'),
+    path('cart/remove/',cart_remove,name='cart_remove'),
     path('checkout/',view_checkout,name='checkout'),
     path('payment/',payment,name='payment'),
     path('payment/paymenthandler/',paymenthandler,name='paymenthandler'),

@@ -1,12 +1,4 @@
 from datetime import timedelta
-import email
-import imp
-import json
-import re
-from sre_constants import SUCCESS
-import django
-from django.contrib import auth
-from django.views import View
 import razorpay
 from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -188,13 +180,18 @@ def view_profile(request):
 def view_cart(request):
     context = {}
     total = 0
+    total_items = 0
     customer_id = request.user.id
-    obj = Cart.objects.filter(user_id=customer_id)
-    for item in obj:
+    cart_obj = Cart.objects.filter(user_id=customer_id)
+    for item in cart_obj:
         item.product.pr_price *= item.quantity
         total += item.product.pr_price
-    context['data'] = obj
-    context['total'] = total
+        total_items += item.quantity
+    grand_total = total + 40 # Delivery fee
+    context['data'] = cart_obj
+    context['total'] = int(total)
+    context['total_items'] = int(total_items)
+    context['grand_total'] = int(grand_total)
     return render(request,'cart.html',context)
 
 # items adding to cart
@@ -275,12 +272,14 @@ def cart_plus_minus(request):
             cart_obj.save()
             # total cart items price
             total = 0
+            total_items = 0
             obj = Cart.objects.filter(user_id=customer_id)
             for item in obj:
                 item.product.pr_price *= item.quantity
                 total += item.product.pr_price
-            
-            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product.pr_price,'success':1,'total':total}
+                total_items += item.quantity
+            grand_total = total + 40 # Delivery fee
+            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product.pr_price,'success':1,'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
         else:
             return JsonResponse('outof stock',safe=False)
@@ -288,53 +287,102 @@ def cart_plus_minus(request):
         cart_obj.quantity -= 1
         if cart_obj.quantity == 0:
             cart_obj.delete()
-            data = {'cart_qty':0}
+            total = 0
+            total_items = 0
+            obj = Cart.objects.filter(user_id=customer_id)
+            for item in obj:
+                item.product.pr_price *= item.quantity
+                total += item.product.pr_price
+                total_items += item.quantity
+            grand_total = total + 40 # Delivery fee
+            data = {'cart_qty':0, 'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
         else:
             cart_obj.product.pr_price *= cart_obj.quantity
             cart_obj.save()
             # total cart items price
             total = 0
+            total_items = 0
             obj = Cart.objects.filter(user_id=customer_id)
             for item in obj:
                 item.product.pr_price *= item.quantity
                 total += item.product.pr_price
-            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product.pr_price,'total':total}
+                total_items += item.quantity
+            grand_total = total + 40 # Delivery fee
+            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product.pr_price,'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
+
+        
+def cart_remove(request):
+    try:
+        if request.user.is_authenticated:
+            pr_id = request.GET['pr_id']
+            customer_id = request.user.id
+            cart_obj = Cart.objects.filter(user_id=customer_id, product_id=pr_id).first()
+            if cart_obj:
+                cart_obj.delete()
+                total = 0
+                total_items = 0
+                cart_obj = Cart.objects.filter(user_id=customer_id)
+                for item in cart_obj:
+                    item.product.pr_price *= item.quantity
+                    total += item.product.pr_price
+                    total_items += item.quantity
+                grand_total = total + 40 # Delivery fee
+                data = {'total':total, 'total_items':total_items, 'grand_total':grand_total, 'status': True, 'msg': 'Product removed form cart'}
+                return JsonResponse(data)
+            else:
+                data = {'success':3, 'status': False, 'msg': "No cart data found"}
+                return JsonResponse(data)
+        else:
+            data = {'success':3, 'status': False, 'msg': "Unauthorized access"}
+            return JsonResponse(data)
+
+    except Exception as e:
+        data = {'success':3, 'status': False, 'msg': "Internal error occurred"}
+        return JsonResponse(data)
+
 
 # check out page
 def view_checkout(request):
-    if request.user.is_authenticated:  
-        context = {}
-        total = 0
-        customer_id = request.user.id
-        cust_details_obj = LoginTable.objects.get(id=customer_id)
-        cart_obj = Cart.objects.filter(user_id=customer_id)
-        # checking cart is empty or not
-        if len(cart_obj) > 0:
-            for item in cart_obj:
-                if item.quantity <= item.product.pr_quantity:
-                    item.product.pr_price *= item.quantity
-                    total += item.product.pr_price
-                    car_obj = Cart.objects.filter(user_id=customer_id)
-                elif item.product.pr_quantity == 0:
-                    item.delete()
-                    # cart object without outof stock product
-                    car_obj = Cart.objects.filter(user_id=customer_id)
-                else:
-                    item.quantity = item.product.pr_quantity
-                    print(item.quantity)
-                    item.save()
-            context['details'] = cust_details_obj
-            context['total'] = total
-            context['data'] = car_obj
-            return render(request,'checkout.html',context)
+    try:
+        if request.user.is_authenticated:  
+            context = {}
+            total = 0
+            customer_id = request.user.id
+            cust_details_obj = LoginTable.objects.get(id=customer_id)
+            cart_obj = Cart.objects.filter(user_id=customer_id).all()
+            # checking cart is empty or not
+            if cart_obj:
+                print('yes')
+                for item in cart_obj:
+                    if item.quantity <= item.product.pr_quantity:
+                        item.product.pr_price *= item.quantity
+                        total += item.product.pr_price
+                        car_obj = Cart.objects.filter(user_id=customer_id)
+                    elif item.product.pr_quantity == 0:
+                        item.delete()
+                        # cart object without outof stock product
+                        car_obj = Cart.objects.filter(user_id=customer_id)
+                    else:
+                        item.quantity = item.product.pr_quantity
+                        print(item.quantity)
+                        item.save()
+                context['details'] = cust_details_obj
+                context['total'] = total + 40
+                context['data'] = car_obj
+                return render(request,'checkout.html',context)
+            else:
+                print('not')
+                messages.add_message(request, messages.WARNING, 'Your cart is empty. Please add some products to continue..')
+                return redirect('cart')
         else:
-            context['details'] = cust_details_obj
-            context['total'] = total
-            return render(request,'checkout.html',context)
-    else:
-        return redirect('login')
+            messages.add_message(request, messages.WARNING, 'Please login to continue..')
+            return redirect('cart')
+    except Exception as e:
+        print(e)
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return redirect('cart')
 # Test payment using Razorpay
 
 def payment(request):
@@ -408,7 +456,6 @@ def paymenthandler(request):
 
                     # capture the payemt
                     payment_capture = razor_pay_client.payment.capture(payment_id, amount)
-                    print(payment_capture)
                     if payment_capture is not None:     
 
                         # render success page on successful caputre of payment
@@ -485,7 +532,6 @@ def cancel_order(request):
     order_id = request.POST['order_id']
 
     order_obj = Order.objects.get(id=order_id)
-    print(order_obj.status)
     order_obj.status = 5
     order_obj.save()
     return JsonResponse('hai',safe=False)

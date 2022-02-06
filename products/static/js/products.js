@@ -6,17 +6,41 @@
       data = {'val':val}
       $.get('add_to_cart/',data,function(res){
         if(res['success'] == 1){
-          alert('Product added to cart')
+          cuteAlert({
+            type: "success",
+            title: "Success",
+            message: "Product added to cart successfully",
+            img: "img/success.svg",
+            buttonText: "Continue shopping"
+          })
         }
         else if(res['success'] == 2){
-          alert('Same product added to cart')
+          cuteAlert({
+            type: "success",
+            title: "Success",
+            message: "Product added to cart successfully",
+            img: "img/success.svg",
+            buttonText: "Continue shopping"
+          })
         }
         else if(res['success'] == 0){
-          alert('No more item available')
+          cuteAlert({
+            type: "info",
+            title: "Info",
+            message: "No more products available",
+            img: "img/info.svg",
+            buttonText: "Okay"
+          })
         }
         else if(res['success'] == 3){
           console.log('Please login')
-          alert('Please login to add items to cart')
+          cuteAlert({
+            type: "warning",
+            title: "Login",
+            message: "Please login to add items to cart",
+            img: "img/warning.svg",
+            buttonText: "Okay"
+          })
         }
       })
     })
