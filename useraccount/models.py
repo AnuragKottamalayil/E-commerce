@@ -1,10 +1,8 @@
-import imp
+
 from pyexpat import model
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.db.models.enums import Choices
-from django.db.models.fields import BigIntegerField
-from products.models import Products
+from products.models import Products, ProductVariation
 from django.utils import timezone
 from datetime import date, datetime
 # Create your models here.
@@ -16,13 +14,14 @@ class LoginTable(AbstractUser):
 
 class Cart(models.Model):
     product = models.ForeignKey(Products,on_delete=models.CASCADE)
+    product_variation = models.ForeignKey(ProductVariation,on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(LoginTable,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     def __str__(self):
         return self.user.username
 
 class Order(models.Model):
-    STATUS = (
+    ORDER_STATUS = (
         (1,'Not packed'),
         (2,'Packed'),
         (3,'Shipped'),
@@ -30,10 +29,17 @@ class Order(models.Model):
         (5,'Canceled'),
         
     )
+    PAYMENT_STATUS = (
+        (1,'Success'),
+        (2,'Pending'),
+        (3,'Failed')
+        
+    )
     user = models.ForeignKey(LoginTable,on_delete=models.SET_NULL,null=True)
     total_amount = models.FloatField()
-    status = models.IntegerField(choices=STATUS,default=1)
-    date_ordered = models.DateTimeField(default=timezone.now)
+    order_status = models.IntegerField(choices=ORDER_STATUS,default=1)
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS, default=2)
+    date_ordered = models.DateTimeField(default=datetime.now())
     razor_pay_order_id = models.CharField(max_length=50,null=True,blank=True)
     razor_pay_payment_id = models.CharField(max_length=50,null=True,blank=True)
     razor_pay_signature = models.CharField(max_length=200,null=True,blank=True)
@@ -41,11 +47,14 @@ class Order(models.Model):
     def __str__(self):
         return self.user.username
 
-class OrderProducts(models.Model):
+class OrderDetails(models.Model):
     product = models.ForeignKey(Products,on_delete=models.SET_NULL,null=True)
+    product_variation = models.ForeignKey(ProductVariation,on_delete=models.SET_NULL,null=True)
     order = models.ForeignKey(Order,on_delete=models.SET_NULL,null=True)
     quantity = models.IntegerField(default=0)
-    price = models.FloatField()
+    amount = models.FloatField()
+    created = models.DateTimeField(default=datetime.now())
+    modified = models.DateTimeField(default=datetime.now())
 
     def __str__(self):
         return self.order.user.username

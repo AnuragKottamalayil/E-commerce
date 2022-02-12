@@ -7,20 +7,107 @@
 <script src="{% static 'js/cute-alert.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/cute_alert.css' %}" />
 
-<div class="container text-center product" id='product'>
+<style>
+  .card {
+    margin: auto;
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 50px;
+    margin-bottom: 50px
+}
+.btn {
+    background-color: #000;
+    border-color: #000;
+    color: white;
+    width: 100%;
+    font-size: 0.7rem;
+    margin-top: 4vh;
+    padding: 1vh;
+    border-radius: 0
+}
+.btn:hover{
+  color: rgb(255, 217, 0);
+}
+
+.like {
+    color: #757575;
+    font-weight: bold;
+    background-color: #EEEEEE;
+    padding: 7px;
+    border-radius: 50%
+}
+
+.like-checked {
+    color: #E53935
+}
+
+.like:hover {
+    color: #E53935;
+    cursor: pointer;
+}
+
+.pic1 {
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block
+}
+
+.product-pic {
+    padding-left: auto;
+    padding-right: auto;
+    width: 100%
+}
+
+.card-1 {
+    padding: 30px 30px 20px 30px !important;
+    border: none;
+    width: 375px
+}
+
+.category {
+    padding-top: 25px;
+    color: grey
+}
+
+.product-name {
+    padding-bottom: 15px;
+    font-family: Florence;
+    font-weight: bold
+}
+
+.price {
+    font-size: 18px
+}
+
+.sm-text {
+    font-size: 14px
+}
+
+.fa-star {
+    color: #FF6F00;
+    cursor: pointer
+}
+
+.fa-star-o {
+    color: #FF6F00;
+    cursor: pointer
+}
+</style>
+
+<!-- <div class="container text-center product" id='product'>
     <div class="row">
-      <!-- <h1>haiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii</h1> -->
         {% for item in products %}
         <div  class="col-md-4 p-3 col-sm-2 ">
             <div class="card text-center mx-auto" style="width: 18rem;">
-                <img style="width: 142px;height: 256px;" class="ml-5 mt-4" src="/media/{{item.pr_image}}" alt="Card image cap">
+                <img class="ml-5 mt-4" src="/media/{{item.image}}" alt="Card image cap">
                 <div class="card-body">
-                  <h5 class="card-title">{{item.pr_name}} - ₹{{item.pr_price}}</h5>
+                  <h5 class="card-title">{{item.product.pr_name}} - ₹{{item.price}}</h5>
                   <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                  {% if item.pr_quantity == 0 or item.out_of_stock == True %}
+                  {% if item.quantity == 0 or item.out_of_stock == True %}
                   <h6 class="text-danger">Outof stock</h6>
-                  {% elif item.pr_quantity < 6 %}
-                  <h6 class="text-danger">Hurry only {{item.pr_quantity}} stock left</h6>
+                  {% elif item.quantity < 6 %}
+                  <h6 class="text-danger">Hurry only {{item.quantity}} stock left</h6>
                   {% endif %}
                   <a href="#" data-id={{item.id}} class="btn btn-danger butn">Add to cart</a>
                   <a href="{% url 'products_details' id=item.id %}" class="btn btn-primary">Details</a>
@@ -29,13 +116,39 @@
         </div>
         {% endfor %}
     </div>
-</div>
+</div> -->
 
-<div class="container text-center main">
-  <div id='parent' class="row">
-
+<div class="container text-center">
+  <div class="row justify-content-center">
+    {% for item in products %}
+    <div  class="col-md-3 p-1 col-sm-2 ">
+      <div class="d-flex pl-3" style="height: 421px; width: 250px;">
+          <div class="card card-1 shadow p-3 mb-5 bg-white rounded">
+              <div class="pr-3 row justify-content-end">
+                  <div class="fa fa-heart-o like"></div>
+              </div>
+              <div class="product-pic"> <img class="pic1" src="/media/{{item.image}}"> </div> <small class="category">{{item.product.pr_category.name}}</small>
+              <h6 class="">{{item.product.pr_name}}</h6> 
+              <div class="row px-3 justify-content-between">
+                <div class="stars"> <span class="fa fa-star star-active"></span> <span class="fa fa-star star-active"></span> <span class="fa fa-star star-active"></span> <span class="fa fa-star-o"></span> <span class="fa fa-star-o"></span> </div>
+                <span style="padding-bottom: 0px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" class="">₹{{item.price}}</span>
+                
+              </div>
+              <button data-id={{item.id}} class="btn">Add to cart</button>
+              
+          </div>
+          
+      </div>
+    </div>
+      {% endfor %}
+    
   </div>
 </div>
+  </div>
+</div>
+
+
+
 
 
 

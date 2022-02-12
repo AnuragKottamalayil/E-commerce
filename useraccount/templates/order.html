@@ -3,6 +3,18 @@
 {% block head %}
 
 
+{% if messages %}
+    <ul class="messages">
+        {% for msg in messages %}       
+        <li>
+            <div class="alert alert-{{msg.level_tag}}" role="alert">
+                {{msg.message}}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
 <div class="container text-center">
     <h4>Order summary</h4>
 

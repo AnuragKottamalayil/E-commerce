@@ -259,15 +259,15 @@ a:hover {
             </div>
             {% if data %}
             {% for item in data %}
-                <div id="{{item.product_id}}" class="row border-top border-bottom">
+                <div id="{{item.product_variation_id}}" class="row border-top border-bottom">
                     <div class="row main align-items-center">
-                        <div class="col-2"><img class="img-fluid" src="/media/{{item.product.pr_image}}"></div>
+                        <div class="col-2"><img class="img-fluid" src="/media/{{item.product_variation.image}}"></div>
                         <div class="col">
                             <div class="row text-muted">{{item.product.pr_brand}}</div>
                             <div class="row">{{item.product.pr_name}}</div>
                         </div>
-                        <div class="col"> <span style="cursor: pointer;" data-id="{{item.product_id}}" class="minus pr-3">-</span><span id=quantity{{item.product_id}} class="border">{{item.quantity}}</span><span style="cursor: pointer;" data-id="{{item.product_id}}" class="plus pl-3">+</span></div>
-                        <div id="price{{item.product_id}}" class="col">₹{{item.product.pr_price}}<span  style="cursor: pointer;" data-id="{{item.product_id}}" class="close">&#10005;</span></div>
+                        <div class="col"> <span style="cursor: pointer;" data-id="{{item.product_variation_id}}" class="minus pr-3">-</span><span id=quantity{{item.product_variation_id}} class="border">{{item.quantity}}</span><span style="cursor: pointer;" data-id="{{item.product_variation_id}}" class="plus pl-3">+</span></div>
+                        <div id="price{{item.product_variation_id}}" class="col">₹{{item.product_variation.price}}<span  style="cursor: pointer;" data-id="{{item.product_variation_id}}" class="close">&#10005;</span></div>
                     </div>
                 </div>
             {% endfor %}

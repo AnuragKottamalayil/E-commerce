@@ -1,6 +1,6 @@
 
   $(function(){
-    $(document).on("click", ".butn", function(){
+    $(document).on("click", ".btn", function(){
       console.log('success')
       val = $(this).data('id');
       data = {'val':val}

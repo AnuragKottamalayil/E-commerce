@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import redirect,render
-from .models import Products,ProductDetails
+from .models import Products, ProductVariation
 from django.http import JsonResponse
 import json
 from django.core.serializers import serialize
@@ -9,17 +9,17 @@ from django.core.serializers import serialize
 
 def view_product(request):
     context = {}
-    # print('helo')
-    pr_obj = Products.objects.all()
-    context['products'] = pr_obj
+    print('helo')
+    product_variation_obj = ProductVariation.objects.all()
+    context['products'] = product_variation_obj
     return render(request,'products.html',context)
 
 def product_details(request,id):
     context = {}
     pr_obj = Products.objects.get(id=id)
-    obj = ProductDetails.objects.get(pr_id=id)
+    # obj = ProductDetails.objects.get(pr_id=id)
     # print(obj.description)
-    context['details'] = obj
+    # context['details'] = obj
     context['pr_details'] = pr_obj
 
     return render(request,'product_details.html',context)
@@ -28,8 +28,8 @@ def home(request):
     context = {}
     pr_obj = Products.objects.all()
     context['products'] = pr_obj
-    for item in pr_obj:
-        print(item.pr_image)
+    # for item in pr_obj:
+    #     print(item.pr_image)
     return render(request,'home.html', context)
 
 def product_view_bybrand(request):

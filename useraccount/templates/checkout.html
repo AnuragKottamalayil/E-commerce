@@ -5,6 +5,17 @@
 
 
 <div class="container"><h1>Checkout</h1>
+    {% if messages %}
+    <ul class="messages">
+        {% for msg in messages %}       
+        <li>
+            <div class="alert alert-{{msg.level_tag}}" role="alert">
+                {{msg.message}}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+{% endif %}
     <h5 class="p-2">Address</h5>
     <form id="profile_edit_form" action="" method="POST">
         {% csrf_token %}
@@ -44,6 +55,11 @@
     <a href="{% url 'payment' %}"><button class="btn btn-dark">Continue to payment</button></a>
 </div>
 </div>
+<!--  -->
+
+
+<!--  -->
+
 
 <script>
     $(function(){
