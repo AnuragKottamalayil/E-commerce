@@ -26,8 +26,10 @@ def product_details(request,id):
 
 def home(request):
     context = {}
-    pr_obj = Products.objects.all()
+    pr_obj = ProductVariation.objects.distinct('product_id')
+    print('pr_obj-------->>>>',pr_obj)
     context['products'] = pr_obj
+    context['page'] = 'home'
     # for item in pr_obj:
     #     print(item.pr_image)
     return render(request,'home.html', context)

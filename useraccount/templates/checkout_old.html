@@ -1,0 +1,98 @@
+{% extends 'home.html' %}
+
+{% block head %}
+
+
+
+<div class="container"><h1>Checkout</h1>
+    {% if messages %}
+    <ul class="messages">
+        {% for msg in messages %}       
+        <li>
+            <div class="alert alert-{{msg.level_tag}}" role="alert">
+                {{msg.message}}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+    <h5 class="p-2">Address</h5>
+    <form id="profile_edit_form" action="" method="POST">
+        {% csrf_token %}
+        <div class="row p-2">
+            <div class="col-md-4"><input id='address' class="form-control" name='address' type="text" value='{{details.address}}' placeholder="Address"></div>
+        </div>
+        <div class="row p-2">
+            <div class="col-md-4"><input id='zip' class="form-control" name='zip' type="text" value='{{details.zipcode}}' placeholder="Zipcode"></div>
+        </div>
+        <div class="row p-2">
+            <div class="col-md-4"><a href="#"><button id='edit' class="btn btn-info">Edit address</button></a></div>
+        </div>
+        <div class="row p-2">
+            <div class="col-md-4"><span id='resp'></span></div>
+        </div>
+    </form>
+
+
+<table class="table table-striped table-hover">
+    <tr>
+    <th>name</th>
+    <th>price</th>
+    <th>quantity</th>
+    </tr>
+    {% for item in data %}
+    <tr>
+        <td>{{item.product.pr_name}}</td>
+        <td>₹{{item.product.pr_price}}</td>
+        <td>{{item.quantity}}</td>
+        
+    </tr>
+    {% endfor %}
+    
+</table>
+<h6 class="p-2">Total = ₹{{total}}</h6>
+<div class="row p-3">
+    <a href="{% url 'payment' %}"><button class="btn btn-dark">Continue to payment</button></a>
+</div>
+</div>
+<!--  -->
+
+
+<!--  -->
+
+
+<script>
+    $(function(){
+        $('#profile_edit_form').submit(function(e){
+            e.preventDefault()
+            dt = new FormData();
+            dt.append('address',$('#address').val());
+            dt.append('zip',$('#zip').val());
+            dt.append('csrfmiddlewaretoken',$('input[type=hidden]').val());
+            // console.log(dt[])
+
+            $.ajax({
+                url : "{% url 'edit_profile_from_checkout' %}",
+                type : 'POST',
+                data : dt,
+                contentType : false,
+                cache : false,
+                processData : false,
+                success : function(res){
+                    if(res['status'] == 1){
+                        address = res['address'];
+                        zipcode = res['zip'];
+                        $('#address').val(address);
+                        $('#zip').val(zipcode);
+                        $('#resp').text('Address updated').css('color','#00b300')
+                    }
+                }
+            })
+        })
+
+    })
+
+</script>
+
+{% endblock head %}
+

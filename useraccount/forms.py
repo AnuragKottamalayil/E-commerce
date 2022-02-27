@@ -7,7 +7,7 @@ from django.forms import fields,widgets
 class RegisterForm(forms.ModelForm):
     class Meta:
         model = LoginTable
-        fields = ('first_name','last_name','username','email','phone_no','password','address','zipcode')
+        fields = ('first_name','last_name','username','email','phone_no','password')
         help_texts = {'username':None}
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
@@ -16,8 +16,7 @@ class RegisterForm(forms.ModelForm):
             'email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'phone_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone No'}),
             'password': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Password'}),
-            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address'}),
-            'zipcode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Zipcode'})
+            
         }
 
         labels = {
@@ -27,8 +26,7 @@ class RegisterForm(forms.ModelForm):
             "email": "",
             "phone_no": "",
             "password": "",
-            "address": "",
-            "zipcode": "",
+          
         }
 
 class LoginForm(forms.ModelForm):
@@ -81,7 +79,7 @@ class ResetPasswordForm(forms.ModelForm):
 class UpdateProfileForm(forms.ModelForm):
     class Meta:
         model = LoginTable
-        fields = ('first_name','last_name','username','email','phone_no','address','zipcode')
+        fields = ('first_name','last_name','username','email','phone_no')
         help_texts = {'username':None}
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
@@ -90,8 +88,7 @@ class UpdateProfileForm(forms.ModelForm):
             'email': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'phone_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone No'}),
             'password': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Password'}),
-            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address'}),
-            'zipcode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Zipcode'})
+            
         }
 
         labels = {
@@ -101,6 +98,5 @@ class UpdateProfileForm(forms.ModelForm):
             "email": "",
             "phone_no": "",
             "password": "",
-            "address": "",
-            "zipcode": "",
+            
         }

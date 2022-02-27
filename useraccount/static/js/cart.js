@@ -1,6 +1,7 @@
 // incrementing cart items amount
 $(function(){
     $('.plus').click(function(){
+        console.log('working')
         pr_id = $(this).data('id');
         data = {'pr_id':pr_id,'val':1}
         $.get('plus_minus/',data,function(res){
@@ -12,10 +13,11 @@ $(function(){
                 grand_total = res['grand_total']
                 // $('#' + pr_id + ' td').eq(1).html(cart_price);
                 // $('#' + pr_id + ' td').eq(2).html(cart_qty);
-                $('#quantity' + pr_id).text(cart_qty);
+                $('#quantity' + pr_id).val(cart_qty);
+                // $('#quantity' + pr_id).text(cart_qty);
                 $('#price' + pr_id).text("₹ " + cart_price);
                 $('#total_price').html("₹ " + total);
-                $('.total_items').html("ITEMS " + total_items);
+                $('.total_items').html(total_items);
                 $('#grand_total').html("₹ " + grand_total);
                 
                 
@@ -36,7 +38,7 @@ $(function(){
 })
 // removing product from cart
 $(function(){
-    $('.close').click(function(){
+    $('.remove').click(function(){
         pr_id = $(this).data('id');
         data = {'pr_id':pr_id};
         $.get('remove/',data,function(res){
@@ -46,7 +48,7 @@ $(function(){
                 grand_total = res['grand_total']
                 $('#' + pr_id).remove();
                 $('#total_price').html("₹ " + total);
-                $('.total_items').html("ITEMS " + total_items);
+                $('.total_items').html(total_items);
                 $('#grand_total').html("₹ " + grand_total);
                 
             }
@@ -76,7 +78,7 @@ $(function(){
                 grand_total = res['grand_total']
                 $('#' + pr_id).remove();
                 $('#total_price').html("₹ " + total);
-                $('.total_items').html("ITEMS " + total_items);
+                $('.total_items').html(total_items);
                 $('#grand_total').html("₹ " + grand_total);
                 
             }
@@ -88,10 +90,11 @@ $(function(){
                 grand_total = res['grand_total']
                 // $('#' + pr_id + ' td').eq(1).html(cart_price);
                 // $('#' + pr_id + ' td').eq(2).html(cart_qty);
-                $('#quantity' + pr_id).text(cart_qty);
+                // $('#quantity' + pr_id).text(cart_qty);
+                $('#quantity' + pr_id).val(cart_qty);
                 $('#price' + pr_id).text("₹ " + cart_price);
                 $('#total_price').html("₹ " + total);
-                $('.total_items').html("ITEMS " + total_items);
+                $('.total_items').html(total_items);
                 $('#grand_total').html("₹ " + grand_total);
             }
         })

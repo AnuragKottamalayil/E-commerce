@@ -17,7 +17,7 @@ urlpatterns = [
     path('cart/remove/',cart_remove,name='cart_remove'),
     path('checkout/',view_checkout,name='checkout'),
     path('payment/',payment,name='payment'),
-    path('payment/paymenthandler/',paymenthandler,name='paymenthandler'),
+    path('checkout/paymenthandler/',paymenthandler,name='paymenthandler'),
     path('order/',order,name='order'),
     path('order/cancel_order/',cancel_order,name='cancel_order'),
 

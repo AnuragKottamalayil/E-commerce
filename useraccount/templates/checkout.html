@@ -1,98 +1,200 @@
 {% extends 'home.html' %}
+{% block home %}
+{% load static %}
 
-{% block head %}
-
-
-
-<div class="container"><h1>Checkout</h1>
-    {% if messages %}
-    <ul class="messages">
-        {% for msg in messages %}       
-        <li>
-            <div class="alert alert-{{msg.level_tag}}" role="alert">
-                {{msg.message}}
+    <!-- Breadcrumb Section Begin -->
+    <section class="breadcrumb-option">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcrumb__text">
+                        <h4>Check Out</h4>
+                        <div class="breadcrumb__links">
+                            <a href="./index.html">Home</a>
+                            <a href="./shop.html">Shop</a>
+                            <span>Check Out</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </li>
-        {% endfor %}
-    </ul>
-{% endif %}
-    <h5 class="p-2">Address</h5>
-    <form id="profile_edit_form" action="" method="POST">
-        {% csrf_token %}
-        <div class="row p-2">
-            <div class="col-md-4"><input id='address' class="form-control" name='address' type="text" value='{{details.address}}' placeholder="Address"></div>
         </div>
-        <div class="row p-2">
-            <div class="col-md-4"><input id='zip' class="form-control" name='zip' type="text" value='{{details.zipcode}}' placeholder="Zipcode"></div>
+    </section>
+    <!-- Breadcrumb Section End -->
+
+    <!-- Checkout Section Begin -->
+    <section class="checkout spad">
+        <div class="container">
+            <div class="checkout__form">
+                <form action="#">
+                    <div class="row">
+                        <div class="col-lg-8 col-md-6">
+                            <h6 class="coupon__code"><span class="icon_tag_alt"></span> Have a coupon? <a href="#">Click
+                            here</a> to enter your code</h6>
+                            <h6 class="checkout__title">Billing Details</h6>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="checkout__input">
+                                        <p>Fist Name<span>*</span></p>
+                                        <input required type="text" value="{{first_name}}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="checkout__input">
+                                        <p>Last Name<span>*</span></p>
+                                        <input required type="text" value="{{last_name}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <div class="checkout__input">
+                                <p>Country<span>*</span></p>
+                                <input required type="text">
+                            </div> -->
+                            <div class="checkout__input">
+                                <p>Address<span>*</span></p>
+                                <input required type="text" placeholder="Street Address" class="checkout__input__add" value="{{line1}}">
+                                <input required type="text" placeholder="Apartment, suite, unite ect (optinal)" value="{{line2}}">
+                            </div>
+                            <div class="checkout__input">
+                                <p>Town/City<span>*</span></p>
+                                <input required type="text" value="{{city}}">
+                            </div>
+                            <div class="checkout__input">
+                                <p>Country/State<span>*</span></p>
+                                <input required type="text" value="{{state}}">
+                            </div>
+                            <div class="checkout__input">
+                                <p>Postcode / ZIP<span>*</span></p>
+                                <input required type="text" value="{{zipcode}}">
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="checkout__input">
+                                        <p>Phone<span>*</span></p>
+                                        <input required type="text" value="{{phone_no}}">
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="checkout__input">
+                                        <p>Email<span>*</span></p>
+                                        <input required type="email" value="{{email}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- <div class="checkout__input__checkbox">
+                                <label for="acc">
+                                    Create an account?
+                                    <input type="checkbox" id="acc">
+                                    <span class="checkmark"></span>
+                                </label>
+                                <p>Create an account by entering the information below. If you are a returning customer
+                                please login at the top of the page</p>
+                            </div>
+                            <div class="checkout__input">
+                                <p>Account Password<span>*</span></p>
+                                <input type="text">
+                            </div>
+                            <div class="checkout__input__checkbox">
+                                <label for="diff-acc">
+                                    Note about your order, e.g, special noe for delivery
+                                    <input type="checkbox" id="diff-acc">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+                            <div class="checkout__input">
+                                <p>Order notes<span>*</span></p>
+                                <input type="text"
+                                placeholder="Notes about your order, e.g. special notes for delivery.">
+                            </div> -->
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="checkout__order">
+                                <h4 class="order__title">Your order</h4>
+                                <div class="checkout__order__products">Product <span>Total</span></div>
+                                <ul class="checkout__total__products">
+                                    {% for product in data %}
+                                        <li>{{product.product_name}} <span>₹ {{product.total_per_item}}</span></li>
+                                    {% endfor %}
+                                    <!-- <li>02. German chocolate <span>$ 170.0</span></li>
+                                    <li>03. Sweet autumn <span>$ 170.0</span></li>
+                                    <li>04. Cluten free mini dozen <span>$ 110.0</span></li> -->
+                                </ul>
+                                <ul class="checkout__total__all">
+                                    <li>Subtotal <span>₹ {{subtotal_price}}</span></li>
+                                    <li>Total <span>₹ {{total_price}}</span></li>
+                                </ul>
+
+                                <ul class="">
+                                    <img src="{% static 'images/icon/razorpay.svg' %}" alt="">
+                                </ul>
+                                <!-- <div class="checkout__input__checkbox">
+                                    <label for="acc-or">
+                                        Create an account?
+                                        <input type="checkbox" id="acc-or">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                                <p>Lorem ipsum dolor sit amet, consectetur adip elit, sed do eiusmod tempor incididunt
+                                ut labore et dolore magna aliqua.</p>
+                                <div class="checkout__input__checkbox">
+                                    <label for="payment">
+                                        Check Payment
+                                        <input type="checkbox" id="payment">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                                <div class="checkout__input__checkbox">
+                                    <label for="paypal">
+                                        Paypal
+                                        <input type="checkbox" id="paypal">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div> -->
+                               <a href="{% url 'payment' %}"> <button id="pay-btn" type="submit" class="site-btn">PLACE ORDER</button></a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="row p-2">
-            <div class="col-md-4"><a href="#"><button id='edit' class="btn btn-info">Edit address</button></a></div>
-        </div>
-        <div class="row p-2">
-            <div class="col-md-4"><span id='resp'></span></div>
-        </div>
-    </form>
+    </section>
+    <!-- Checkout Section End -->
 
 
-<table class="table table-striped table-hover">
-    <tr>
-    <th>name</th>
-    <th>price</th>
-    <th>quantity</th>
-    </tr>
-    {% for item in data %}
-    <tr>
-        <td>{{item.product.pr_name}}</td>
-        <td>₹{{item.product.pr_price}}</td>
-        <td>{{item.quantity}}</td>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      var options = {
+         
+        // Enter the Key ID generated from the Dashboard
+        key: "{{ razorpay_merchant_key }}",
+         
+        // Amount is in currency subunits.
+        // Default currency is INR. Hence,
+        // 50000 refers to 50000 paise
+        amount: "{{ razorpay_amount }}",
+        currency: "{{ currency }}",
+         
+        // Your/store name.
+        name: "Mobile Group",
+        description: "Test Transaction",
         
-    </tr>
-    {% endfor %}
-    
-</table>
-<h6 class="p-2">Total = ₹{{total}}</h6>
-<div class="row p-3">
-    <a href="{% url 'payment' %}"><button class="btn btn-dark">Continue to payment</button></a>
-</div>
-</div>
-<!--  -->
+        "prefill": {
+          "email": "{{email}}",
+          "contact": "{{phone}}"
+      },
+  
+        // Pass the `id` obtained in the response of Step 1
+        order_id: "{{ razorpay_order_id }}",
+        callback_url: "{{ callback_url }}",
+      };
+       
+      // initialise razorpay with the options.
+      var rzp1 = new Razorpay(options);
+       
+      // add event listener to the payment button.
+      document.getElementById("pay-btn").onclick = function (e) {
+        rzp1.open();
+        e.preventDefault();
+      };
+    </script>
 
-
-<!--  -->
-
-
-<script>
-    $(function(){
-        $('#profile_edit_form').submit(function(e){
-            e.preventDefault()
-            dt = new FormData();
-            dt.append('address',$('#address').val());
-            dt.append('zip',$('#zip').val());
-            dt.append('csrfmiddlewaretoken',$('input[type=hidden]').val());
-            // console.log(dt[])
-
-            $.ajax({
-                url : "{% url 'edit_profile_from_checkout' %}",
-                type : 'POST',
-                data : dt,
-                contentType : false,
-                cache : false,
-                processData : false,
-                success : function(res){
-                    if(res['status'] == 1){
-                        address = res['address'];
-                        zipcode = res['zip'];
-                        $('#address').val(address);
-                        $('#zip').val(zipcode);
-                        $('#resp').text('Address updated').css('color','#00b300')
-                    }
-                }
-            })
-        })
-
-    })
-
-</script>
-
-{% endblock head %}
-
+{% endblock home %}

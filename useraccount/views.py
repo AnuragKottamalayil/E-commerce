@@ -29,29 +29,43 @@ def view_login(request):
         password = request.POST['password']
         user = authenticate(username=username,password=password)
         if user is not None:
-            login(request,user)
-            return redirect('home')
+            if user.is_active == True:
+                if user.blocked != True:
+                    login(request,user)
+                    return redirect('home')
+                messages.add_message(request, messages.WARNING, 'Your account is blocked please contact admin')
+                return redirect('login')
+            messages.add_message(request, messages.WARNING, 'You do not have an active account')
+            return redirect('login')
+                
         else:
             messages.add_message(request, messages.WARNING, 'Invalid username or password')
             return redirect('login')
 
 # user registration
 def view_reg(request):
-    if request.method == 'GET':
-        context = {}
-        form_obj = RegisterForm()
-        context['form'] = form_obj
-        return render(request,'register.html',context)
-    elif request.method == 'POST':
-        form_obj = RegisterForm(request.POST)
-        password = request.POST['password']
-        if form_obj.is_valid:
-            obj = form_obj.save(commit=False)
-            obj.set_password(password)
-            obj.save()
-            return redirect('login')
-        else:
-            return HttpResponse('error')
+    try:
+        if request.method == 'GET':
+            context = {}
+            form_obj = RegisterForm()
+            context['form'] = form_obj
+            return render(request,'register.html',context)
+        elif request.method == 'POST':
+            form_obj = RegisterForm(request.POST)
+            password = request.POST['password']
+            if form_obj.is_valid:
+                obj = form_obj.save(commit=False)
+                obj.set_password(password)
+                obj.save()
+                messages.add_message(request, messages.SUCCESS, 'Account created successfully. Please login to continue')
+                return redirect('login')
+                
+            else:
+                messages.add_message(request, messages.WARNING, 'The form you submitted is not valid')
+                return HttpResponseRedirect(request.path_info)
+    except Exception as e:
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return HttpResponseRedirect(request.path_info)
 
 # user logout
 def view_logout(request):
@@ -91,6 +105,9 @@ def forgot_password(request):
                   
                     messages.add_message(request, messages.WARNING, 'This email id does not belongs to our company')
                     return HttpResponseRedirect(request.path_info)
+            else:
+                messages.add_message(request, messages.WARNING, 'Invalid email address')
+                return HttpResponseRedirect(request.path_info)
 
     except Exception as e:
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
@@ -192,7 +209,8 @@ def view_cart(request):
     context['total'] = int(total)
     context['total_items'] = int(total_items)
     context['grand_total'] = int(grand_total)
-    return render(request, 'cart.html', context)
+    context['page'] = 'pages'
+    return render(request, 'shopping-cart.html', context)
 
 # items adding to cart
 def add_to_cart(request):
@@ -351,32 +369,93 @@ def view_checkout(request):
     try:
         if request.user.is_authenticated:  
             context = {}
-            total = 0
+            data = []
+            amount = 0
+            currency = 'INR'
             customer_id = request.user.id
-            cust_details_obj = LoginTable.objects.get(id=customer_id)
-            cart_obj = Cart.objects.filter(user_id=customer_id).all()
-            # checking cart is empty or not
-            if cart_obj:
-                
-                for item in cart_obj:
-                    if item.quantity <= item.product_variation.quantity:
+            customer_obj = LoginTable.objects.filter(id=customer_id).first()
+            if customer_obj:
+                cart_obj = Cart.objects.select_related('product').filter(user_id=customer_id).all()
+                # print('cartobj   ',cart_obj)
+                # checking cart is empty or not
+                if cart_obj:
+                    address_obj = Address.objects.filter(customer_id = customer_id).first()
+                    # for item in cart_obj:
+                    #     if item.quantity <= item.product_variation.quantity:
+                    #         item.product_variation.price *= item.quantity
+                    #         total += item.product_variation.price
+                    #         car_obj = Cart.objects.filter(user_id=customer_id)
+                    #     elif item.product_variation.quantity == 0:
+                    #         item.delete()
+                    #         # cart object without outof stock product
+                    #         car_obj = Cart.objects.filter(user_id=customer_id)
+                    #     else:
+                    #         item.quantity = item.product_variation.quantity
+                    #         item.save()
+                    subtotal_price = 0
+                    for product in cart_obj:
+                        if product.quantity > product.product_variation.quantity:
+                            messages.add_message(request, messages.WARNING, 'Some products in your cart is out of stock for now. Please remove them to checkout.')
+                            return redirect('cart')
+                        else:
+                            temp_data = {}
+                            temp_data['product_name'] = product.product.pr_name
+                            temp_data['total_per_item'] = product.product_variation.price * product.quantity
+                            # print('temp_data---->>',temp_data)
+                            subtotal_price += product.product_variation.price * product.quantity
+                            
+                            data.append(temp_data)
+
+                    if address_obj:
+                        context['line1'] = address_obj.line1
+                        context['line2'] = address_obj.line2
+                        context['city'] = address_obj.city
+                        context['zipcode'] = address_obj.zipcode
+                        context['state'] = address_obj.state
+
+                    context['first_name'] = customer_obj.first_name
+                    context['last_name'] = customer_obj.last_name
+                    context['email'] = customer_obj.email
+                    context['phone_no'] = customer_obj.phone_no
+                    context['total_price'] = subtotal_price  + 40 # Delivery fee
+                    context['subtotal_price'] = subtotal_price
+    
+                    context['data'] = data
+
+                    
+                    for item in cart_obj:
                         item.product_variation.price *= item.quantity
-                        total += item.product_variation.price
-                        car_obj = Cart.objects.filter(user_id=customer_id)
-                    elif item.product_variation.quantity == 0:
-                        item.delete()
-                        # cart object without outof stock product
-                        car_obj = Cart.objects.filter(user_id=customer_id)
-                    else:
-                        item.quantity = item.product_variation.quantity
-                        item.save()
-                context['details'] = cust_details_obj
-                context['total'] = total + 40
-                context['data'] = car_obj
-                return render(request,'checkout.html',context)
+                        amount += item.product_variation.price
+                    amount *= 100
+                
+                    # Create a Razorpay Order
+                    razorpay_order = razor_pay_client.order.create(dict(amount=amount,
+                                                                    currency=currency,
+                                                                    payment_capture='0'))
+                
+                    # order id of newly created order.
+                    razorpay_order_id = razorpay_order['id']
+                    callback_url = 'paymenthandler/'
+                
+                    # we need to pass these details to frontend.
+    
+                    context['razorpay_order_id'] = razorpay_order_id
+                    context['razorpay_merchant_key'] = settings.RAZOR_KEY_ID
+                    context['razorpay_amount'] = amount/100
+                    context['currency'] = currency
+                    context['callback_url'] = callback_url
+                    context['email'] = customer_obj.email
+                    context['phone'] = customer_obj.phone_no
+
+                    # print(context)
+                    # context['data'] = car_obj
+                    return render(request,'checkout.html', context)
+                else:
+                    print('not')
+                    messages.add_message(request, messages.WARNING, 'Your cart is empty. Please add some products to continue..')
+                    return redirect('cart')
             else:
-                print('not')
-                messages.add_message(request, messages.WARNING, 'Your cart is empty. Please add some products to continue..')
+                messages.add_message(request, messages.WARNING, 'Unauthorized request')
                 return redirect('cart')
         else:
             messages.add_message(request, messages.WARNING, 'Please login to continue..')
@@ -385,6 +464,7 @@ def view_checkout(request):
         print(e)
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
         return redirect('cart')
+
 # Test payment using Razorpay
 
 def payment(request):

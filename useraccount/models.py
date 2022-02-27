@@ -1,5 +1,4 @@
 
-from pyexpat import model
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from products.models import Products, ProductVariation
@@ -9,8 +8,7 @@ from datetime import date, datetime
 
 class LoginTable(AbstractUser):
     phone_no = models.BigIntegerField(null=True,blank=True)
-    address = models.CharField(max_length=200,null=True,blank=True)
-    zipcode = models.IntegerField(null=True,blank=True)
+    blocked = models.BooleanField(default=False)
 
 class Cart(models.Model):
     product = models.ForeignKey(Products,on_delete=models.CASCADE)
@@ -35,7 +33,7 @@ class Order(models.Model):
         (3,'Failed')
         
     )
-    user = models.ForeignKey(LoginTable,on_delete=models.SET_NULL,null=True)
+    user = models.ForeignKey(LoginTable,on_delete=models.SET_NULL, null=True)
     total_amount = models.FloatField()
     order_status = models.IntegerField(choices=ORDER_STATUS,default=1)
     payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS, default=2)
@@ -65,3 +63,12 @@ class CustomerOtp(models.Model):
     created = models.DateTimeField(default=datetime.now())
     modified = models.DateTimeField(default=datetime.now())
     verified = models.BooleanField(default=False)
+
+
+class Address(models.Model):
+    customer = models.ForeignKey(LoginTable, on_delete=models.CASCADE)
+    line1 = models.CharField(max_length=200, verbose_name='Address1')
+    line2 = models.CharField(max_length=200, verbose_name='Address2')
+    city = models.CharField(max_length=100, verbose_name='City')
+    zipcode = models.IntegerField(verbose_name='Pincode')
+    state = models.CharField(max_length=200, null=True)

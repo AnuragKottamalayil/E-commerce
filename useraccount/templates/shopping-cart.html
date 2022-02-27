@@ -1,0 +1,130 @@
+{% extends 'home.html' %}
+{% block home %}
+{% load mathfilters %}
+{% load static %}
+<script src="{% static 'js/cart.js' %}"></script>
+<script src="{% static 'js/cute-alert.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/cute_alert.css' %}" />
+
+    <!-- Breadcrumb Section Begin -->
+    <section class="breadcrumb-option">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcrumb__text">
+                        <h4>Shopping Cart</h4>
+                        <div class="breadcrumb__links">
+                            <a href="./index.html">Home</a>
+                            <a href="./shop.html">Shop</a>
+                            <span>Shopping Cart</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Breadcrumb Section End -->
+
+    <!-- flash message section  -->
+    {% if messages %}
+        <div class="container mt-3">
+            <ul class="messages">
+                {% for msg in messages %}       
+                
+                    <div class="alert alert-{{msg.level_tag}}" role="alert">
+                        {{msg.message}}
+                    </div>
+            
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <!-- flash message section end -->
+
+    <!-- Shopping Cart Section Begin -->
+    <section class="shopping-cart spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="shopping__cart__table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if data %}
+                                    {% for item in data %}
+                                        <tr id={{item.product_variation_id}}>
+                                            <td class="product__cart__item">
+                                                <div class="product__cart__item__pic">
+                                                    <img style="width: 90px; height: 80px;" src="/media/{{item.product_variation.image}}" alt="">
+                                                </div>
+                                                <div class="product__cart__item__text">
+                                                    <h6>{{item.product.pr_name}}</h6>
+                                                    <h6 class="font-weight-bold">₹ {{item.product_variation.price}}</h6>
+                                                </div>
+                                            </td>
+                                            <td class="quantity__item">
+                                                <div class="quantity">
+                                                    <div class="pro-qty-2">
+                                                        <span data-id="{{item.product_variation_id}}" class="fa fa-angle-left minus"></span>
+                                                        <input id="quantity{{item.product_variation_id}}" type="text" value="{{item.quantity}}">
+                                                        <span data-id="{{item.product_variation_id}}" class="fa fa-angle-right plus"></span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td id="price{{item.product_variation_id}}" class="cart__price">₹ {{item.product_variation.price |mul:item.quantity}}</td>
+                                            <td class="cart__close"><i data-id="{{item.product_variation_id}}" class="fa fa-close remove"></i></td>
+                                        </tr>
+                                    {% endfor %}
+
+                                {% else %}
+                                    <p>No items in your cart.Please add some..</p>
+                                {% endif %}
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="continue__btn">
+                                <a href="#">Continue Shopping</a>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="continue__btn update__btn">
+                                <a href="#"><i class="fa fa-spinner"></i> Update cart</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="cart__discount">
+                        <h6>Discount codes</h6>
+                        <form action="#">
+                            <input type="text" placeholder="Coupon code">
+                            <button type="submit">Apply</button>
+                        </form>
+                    </div>
+                    <div class="cart__total">
+                        <h6>Cart total</h6>
+                        <ul>
+                            <li>Items <span class="total_items">{{total_items}}</span></li>
+                            <li>Subtotal <span id="total_price">₹ {{total}}</span></li>
+                            <li>Delivery Fee <span >₹ 40</span></li>
+                            <li>Total <span id="grand_total">₹ {{grand_total}}</span></li>
+                        </ul>
+                        <a href="{% url 'checkout' %}" class="primary-btn">Proceed to checkout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Shopping Cart Section End -->
+
+{% endblock home %}
