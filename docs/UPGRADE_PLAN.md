@@ -24,12 +24,12 @@ A phased plan to fix known bugs, finish the checkout/address refactor, and harde
 
 ### Tasks
 
-- [ ] Apply pending migrations, especially `useraccount/migrations/0007_auto_20221024_1713.py` (adds `Address.landmark`):
+- [x] Apply pending migrations, especially `useraccount/migrations/0007_auto_20221024_1713.py` (adds `Address.landmark`):
   ```bash
   python manage.py migrate
   ```
-- [ ] Confirm PostgreSQL database `e_commerce` exists and credentials in `e_commerce/settings.py` match your local setup.
-- [ ] Create a `.env` file (do not commit) for secrets — used in Phase 4:
+- [x] Confirm PostgreSQL database `e_commerce` exists and credentials in `e_commerce/settings.py` match your local setup.
+- [x] Create a `.env` file (do not commit) for secrets — used in Phase 4:
   ```
   SECRET_KEY=
   DB_NAME=e_commerce
@@ -40,13 +40,13 @@ A phased plan to fix known bugs, finish the checkout/address refactor, and harde
   RAZOR_KEY_ID=
   RAZOR_KEY_SECRET=
   ```
-- [ ] Document local run steps in a short note (optional): `pip install -r requirements.txt`, `python manage.py runserver`.
+- [x] Document local run steps in a short note (optional): `pip install -r requirements.txt`, `python manage.py runserver`.
 
 ### Verification
 
-- [ ] `python manage.py check` passes with no errors.
-- [ ] Home page (`/`) loads and shows products.
-- [ ] Admin (`/admin/`) loads.
+- [x] `python manage.py check` passes with no errors.
+- [x] Home page (`/`) loads and shows products.
+- [x] Admin (`/admin/`) loads.
 
 ---
 
@@ -144,6 +144,71 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 - [ ] Change `order_item.price` to `order_item.amount`.
 
+### 1.8 Undefined variables, missing imports & control-flow gaps
+
+**Problem:** Several views reference variables that are only assigned inside conditional blocks, or use modules that are never imported. These cause `UnboundLocalError` / `NameError` at runtime — often masked by broad `except Exception` handlers that show a generic error.
+
+> **Note:** `verify_otp` lives in **`useraccount/views.py`**, not `products/views.py`. `products/views.py` has separate issues (see 1.8.2).
+
+#### 1.8.1 `useraccount/views.py`
+
+| Issue | Location | Symptom |
+|-------|----------|---------|
+| `email` used when session has no email | `verify_otp` (~lines 200–203) | `UnboundLocalError: email` if session expired or user opens `/verify-otp/` directly |
+| Same `email` pattern | `reset_password` (~lines 229–232) | `UnboundLocalError: email` on POST without session |
+| `datetime` not imported | `save_otp`, `paymenthandler`, `verify_email_otp` uses `datetime.now()` | `NameError: name 'datetime' is not defined` |
+| `timezone` not imported | `verify_email_otp` (~line 802) | `NameError: name 'timezone' is not defined` |
+| Wrong/unused import | Line 2: `from multiprocessing import context` | Misleading; shadows nothing useful — remove |
+| `prod_var_obj` may be `None` | `add_to_cart` (~line 294) | `AttributeError` on `.product_id` if invalid variation id |
+| Invalid OTP form not handled | `verify_otp` POST branch | Falls through with no response if `form_obj.is_valid()` is False |
+| `reset_password` GET missing form | `reset_password` (~line 223) | Template may render without `form` in context |
+
+**Fix approach:**
+
+- [ ] Add imports at top of `useraccount/views.py`:
+  ```python
+  from datetime import datetime, timedelta
+  from django.utils import timezone
+  ```
+- [ ] Remove `from multiprocessing import context`.
+- [ ] In `verify_otp` and `reset_password`, guard session email **before** use:
+  ```python
+  email = request.session.get('email')
+  if not email:
+      messages.add_message(request, messages.WARNING, 'Session expired. Please request a new OTP.')
+      return redirect('forgot-password')
+  ```
+- [ ] In `add_to_cart`, return error JSON if `prod_var_obj` is `None`:
+  ```python
+  if not prod_var_obj:
+      return JsonResponse({'success': 4})
+  ```
+- [ ] Add `else` branches for invalid forms in `verify_otp` / `reset_password` (re-render with errors or redirect).
+- [ ] Pass `ResetPasswordForm()` in context on `reset_password` GET.
+
+#### 1.8.2 `products/views.py`
+
+| Issue | Location | Symptom |
+|-------|----------|---------|
+| Missing GET param guard | `product_view_bybrand` (~line 38) | `KeyError: 'brand'` if query param omitted |
+| Empty queryset access | `product_view_bybrand` (~line 44) | `IndexError` on `data['pr_obj'][0]` when brand has no products |
+| Missing object guard | `product_details` (~line 19) | `Products.DoesNotExist` if id invalid |
+
+**Fix approach:**
+
+- [ ] Use `request.GET.get('brand')`; return `JsonResponse({'pr_obj': [], 'pr_count': 0})` if missing.
+- [ ] Only log/debug-print first item when `pr_count > 0`.
+- [ ] Use `get_object_or_404(Products, id=id)` or try/except in `product_details`.
+
+#### 1.8.3 Optional: catch these early in development
+
+- [ ] Run a one-off audit before Phase 1:
+  ```bash
+  python -m compileall useraccount products
+  ```
+- [ ] Manually exercise OTP flow: forgot password → verify OTP (with session cleared mid-flow) → reset password.
+- [ ] Hit `/products/product_by_brand/` without `?brand=` and with an empty brand id.
+
 ### Verification (Phase 1)
 
 - [ ] Add item to cart → refresh page → variation price in admin/DB is unchanged.
@@ -152,6 +217,9 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 - [ ] Complete a test Razorpay payment → stock decrements by correct quantity.
 - [ ] Cancel order → `order_status` becomes `5`; order list shows correct status labels.
 - [ ] Order detail page shows line item amounts correctly.
+- [ ] OTP verify with expired/missing session → friendly message, no `UnboundLocalError`.
+- [ ] `save_otp` / `verify_email_otp` run without `NameError` for `datetime` / `timezone`.
+- [ ] Brand filter AJAX handles missing/empty brand without 500 error.
 
 ---
 
@@ -526,7 +594,7 @@ useraccount/
 | Phase | Focus | Priority | Effort |
 |-------|--------|----------|--------|
 | 0 | DB & env baseline | Required | ~30 min |
-| 1 | Critical bugs (prices, orders, redirects) | P0 | 2–4 h |
+| 1 | Critical bugs (prices, orders, redirects, undefined vars) | P0 | 3–5 h |
 | 2 | Checkout & address completion | P1 | 3–5 h |
 | 3 | Product catalog alignment | P1 | 2–3 h |
 | 4 | Security hardening | P1 | 2–4 h |
@@ -558,6 +626,7 @@ Phases 5 and 6 can run in parallel after Phase 4. Phase 8 is ongoing but should 
 ## Notes for reviewers
 
 - **Phase 1 is non-negotiable before production** — price mutation alone can make the catalog unusable after a few cart sessions.
+- **Section 1.8** covers variable/import bugs (e.g. `email` in `verify_otp`, missing `datetime`/`timezone` imports) that were not in the original plan — fix alongside 1.1–1.7.
 - The checkout refactor (Phase 2) is already half-done; finishing it reduces confusion between `checkout.html`, `address.html`, and legacy handlers.
 - Razorpay test keys in `settings.py` should be rotated if this repo is or will be public.
 - After Phase 1, consider a one-time SQL audit:
