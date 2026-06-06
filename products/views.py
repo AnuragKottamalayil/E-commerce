@@ -1,5 +1,4 @@
-from django.shortcuts import render
-from django.shortcuts import redirect,render
+from django.shortcuts import get_object_or_404, redirect, render
 from .models import Products, ProductVariation
 from django.http import JsonResponse
 import json
@@ -16,7 +15,7 @@ def view_product(request):
 
 def product_details(request,id):
     context = {}
-    pr_obj = Products.objects.get(id=id)
+    pr_obj = get_object_or_404(Products, id=id)
     # obj = ProductDetails.objects.get(pr_id=id)
     # print(obj.description)
     # context['details'] = obj
@@ -35,11 +34,15 @@ def home(request):
     return render(request,'home.html', context)
 
 def product_view_bybrand(request):
-    brand = request.GET['brand']
+    brand = request.GET.get('brand')
+    if not brand:
+        return JsonResponse({'pr_obj': [], 'pr_count': 0})
+
     pr_obj = Products.objects.filter(pr_brand=brand)
     pr_obj_serialize = json.loads(serialize('json',pr_obj))
     pr_count = len(pr_obj_serialize)
     data = {'pr_obj':pr_obj_serialize,'pr_count':pr_count}
 
-    print(data['pr_obj'][0]['pk'])
+    if pr_count > 0:
+        print(data['pr_obj'][0]['pk'])
     return JsonResponse(data)

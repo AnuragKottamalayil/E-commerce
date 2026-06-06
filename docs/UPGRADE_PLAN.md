@@ -71,12 +71,12 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix approach:**
 
-- [ ] Introduce a small helper (or inline calculation) that computes line totals without touching the model:
+- [x] Introduce a small helper (or inline calculation) that computes line totals without touching the model:
   ```python
   line_total = item.product_variation.price * item.quantity
   ```
-- [ ] Remove all `item.product_variation.price *= item.quantity` assignments.
-- [ ] Never call `.save()` on `ProductVariation` during cart/display logic.
+- [x] Remove all `item.product_variation.price *= item.quantity` assignments.
+- [x] Never call `.save()` on `ProductVariation` during cart/display logic.
 - [ ] Audit existing DB data: reset any variation prices that were already corrupted (manual SQL or admin fix).
 
 ### 1.2 Wrong loop variable in stock deduction after payment
@@ -87,7 +87,7 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix:**
 
-- [ ] Change `product_variation_obj.quantity -= item.quantity` to `product_variation_obj.quantity -= order_detail.quantity`.
+- [x] Change `product_variation_obj.quantity -= item.quantity` to `product_variation_obj.quantity -= order_detail.quantity`.
 
 ### 1.3 Registration form validation never runs
 
@@ -97,7 +97,7 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix:**
 
-- [ ] Change `if form_obj.is_valid:` to `if form_obj.is_valid():`.
+- [x] Change `if form_obj.is_valid:` to `if form_obj.is_valid():`.
 
 ### 1.4 Broken redirect URL name
 
@@ -107,7 +107,7 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix:**
 
-- [ ] Replace all `redirect('view_checkout')` with `redirect('checkout')`.
+- [x] Replace all `redirect('view_checkout')` with `redirect('checkout')`.
 
 ### 1.5 Order status field name mismatch
 
@@ -117,9 +117,9 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 | File | Change |
 |------|--------|
-| `useraccount/views.py` | `cancel_order`: `order_obj.status = 5` → `order_obj.order_status = 5`; `order` POST: `order_item.order.status` → `order_item.order.order_status` |
-| `useraccount/templates/order.html` | `order.status` → `order.order_status` |
-| `useraccount/templates/order_details.html` | `order_item.order.status` → `order_item.order.order_status` |
+| `useraccount/views.py` | [x] `cancel_order`: `order_obj.status = 5` → `order_obj.order_status = 5`; `order` POST: `order_item.order.status` → `order_item.order.order_status` |
+| `useraccount/templates/order.html` | [x] `order.status` → `order.order_status` |
+| `useraccount/templates/order_details.html` | [x] `order_item.order.status` → `order_item.order.order_status` |
 
 ### 1.6 `get_billing_details` uses undefined `request`
 
@@ -129,10 +129,10 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix:**
 
-- [ ] Add `request` as a parameter: `get_billing_details(request, customer_obj)`.
-- [ ] Update all callers: `view_checkout`, `update_billing_details`.
-- [ ] Replace `return redirect('cart')` inside the helper with `return None, 'Some products in your cart are out of stock...'`.
-- [ ] Remove the price-mutation block at the end of this function (covered in 1.1); compute Razorpay `amount` from unit prices only.
+- [x] Add `request` as a parameter: `get_billing_details(request, customer_obj)`.
+- [x] Update all callers: `view_checkout`, `update_billing_details`.
+- [x] Replace `return redirect('cart')` inside the helper with `return None, 'Some products in your cart are out of stock...'`.
+- [x] Remove the price-mutation block at the end of this function (covered in 1.1); compute Razorpay `amount` from unit prices only.
 
 ### 1.7 `OrderDetails` template uses wrong field
 
@@ -142,7 +142,7 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix:**
 
-- [ ] Change `order_item.price` to `order_item.amount`.
+- [x] Change `order_item.price` to `order_item.amount`.
 
 ### 1.8 Undefined variables, missing imports & control-flow gaps
 
@@ -165,26 +165,26 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix approach:**
 
-- [ ] Add imports at top of `useraccount/views.py`:
+- [x] Add imports at top of `useraccount/views.py`:
   ```python
   from datetime import datetime, timedelta
   from django.utils import timezone
   ```
-- [ ] Remove `from multiprocessing import context`.
-- [ ] In `verify_otp` and `reset_password`, guard session email **before** use:
+- [x] Remove `from multiprocessing import context`.
+- [x] In `verify_otp` and `reset_password`, guard session email **before** use:
   ```python
   email = request.session.get('email')
   if not email:
       messages.add_message(request, messages.WARNING, 'Session expired. Please request a new OTP.')
       return redirect('forgot-password')
   ```
-- [ ] In `add_to_cart`, return error JSON if `prod_var_obj` is `None`:
+- [x] In `add_to_cart`, return error JSON if `prod_var_obj` is `None`:
   ```python
   if not prod_var_obj:
       return JsonResponse({'success': 4})
   ```
-- [ ] Add `else` branches for invalid forms in `verify_otp` / `reset_password` (re-render with errors or redirect).
-- [ ] Pass `ResetPasswordForm()` in context on `reset_password` GET.
+- [x] Add `else` branches for invalid forms in `verify_otp` / `reset_password` (re-render with errors or redirect).
+- [x] Pass `ResetPasswordForm()` in context on `reset_password` GET.
 
 #### 1.8.2 `products/views.py`
 
@@ -196,30 +196,30 @@ These bugs affect real data or block core flows. Fix them before any UI polish.
 
 **Fix approach:**
 
-- [ ] Use `request.GET.get('brand')`; return `JsonResponse({'pr_obj': [], 'pr_count': 0})` if missing.
-- [ ] Only log/debug-print first item when `pr_count > 0`.
-- [ ] Use `get_object_or_404(Products, id=id)` or try/except in `product_details`.
+- [x] Use `request.GET.get('brand')`; return `JsonResponse({'pr_obj': [], 'pr_count': 0})` if missing.
+- [x] Only log/debug-print first item when `pr_count > 0`.
+- [x] Use `get_object_or_404(Products, id=id)` or try/except in `product_details`.
 
 #### 1.8.3 Optional: catch these early in development
 
-- [ ] Run a one-off audit before Phase 1:
+- [x] Run a one-off audit before Phase 1:
   ```bash
   python -m compileall useraccount products
   ```
 - [ ] Manually exercise OTP flow: forgot password → verify OTP (with session cleared mid-flow) → reset password.
-- [ ] Hit `/products/product_by_brand/` without `?brand=` and with an empty brand id.
+- [x] Hit `/products/product_by_brand/` without `?brand=` and with an empty brand id.
 
 ### Verification (Phase 1)
 
-- [ ] Add item to cart → refresh page → variation price in admin/DB is unchanged.
-- [ ] Register with invalid data → form errors shown, user not created.
-- [ ] Submit invalid checkout address → redirects/re-renders without `NoReverseMatch`.
+- [x] Add item to cart → refresh page → variation price in admin/DB is unchanged.
+- [x] Register with invalid data → form errors shown, user not created.
+- [x] Submit invalid checkout address → redirects/re-renders without `NoReverseMatch`.
 - [ ] Complete a test Razorpay payment → stock decrements by correct quantity.
-- [ ] Cancel order → `order_status` becomes `5`; order list shows correct status labels.
-- [ ] Order detail page shows line item amounts correctly.
-- [ ] OTP verify with expired/missing session → friendly message, no `UnboundLocalError`.
-- [ ] `save_otp` / `verify_email_otp` run without `NameError` for `datetime` / `timezone`.
-- [ ] Brand filter AJAX handles missing/empty brand without 500 error.
+- [x] Cancel order → `order_status` becomes `5`; order list shows correct status labels.
+- [x] Order detail page shows line item amounts correctly.
+- [x] OTP verify with expired/missing session → friendly message, no `UnboundLocalError`.
+- [x] `save_otp` / `verify_email_otp` run without `NameError` for `datetime` / `timezone`.
+- [x] Brand filter AJAX handles missing/empty brand without 500 error.
 
 ---
 

@@ -16,16 +16,16 @@
         <tr>
             <th>{{order_item.product.pr_name}}</th>
             <th>{{order_item.quantity}}</th>
-            <th>{{order_item.price}}</th>
-            {% if order_item.order.status == 1 %}
+            <th>{{order_item.amount}}</th>
+            {% if order_item.order.order_status == 1 %}
             <td>Not packed</td>
-            {% elif order_item.order.status == 2 %}
+            {% elif order_item.order.order_status == 2 %}
             <td>Packed</td>
-            {% elif order_item.order.status == 3 %}
+            {% elif order_item.order.order_status == 3 %}
             <td>Shipped</td>
-            {% elif order_item.order.status == 4 %}
+            {% elif order_item.order.order_status == 4 %}
             <td class="text-success">Delivered</td>
-            {% elif order_item.order.status == 5 %}
+            {% elif order_item.order.order_status == 5 %}
             <td class="text-danger">Canceled</td>
             {% endif %}
         </tr>

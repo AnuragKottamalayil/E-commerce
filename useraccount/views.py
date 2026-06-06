@@ -1,5 +1,4 @@
-from datetime import timedelta
-from multiprocessing import context
+from datetime import datetime, timedelta
 import razorpay
 from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -12,6 +11,7 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 import random
 from django.contrib import messages
+from django.utils import timezone
 
 # Authorizing razorpay client
 
@@ -54,7 +54,7 @@ def view_reg(request):
         elif request.method == 'POST':
             form_obj = RegisterForm(request.POST)
             password = request.POST['password']
-            if form_obj.is_valid:
+            if form_obj.is_valid():
                 obj = form_obj.save(commit=False)
                 obj.set_password(password)
                 obj.save()
@@ -195,10 +195,11 @@ def verify_otp(request):
         elif request.method == "POST":
             form_obj = VerifyOtpForm(data=request.POST)
             if form_obj.is_valid():
-
                 otp = form_obj.cleaned_data['otp']
-                if 'email' in request.session:
-                    email = request.session['email']
+                email = request.session.get('email')
+                if not email:
+                    messages.add_message(request, messages.WARNING, 'Session expired. Please request a new OTP.')
+                    return redirect('forgot-password')
                 
                 is_verified, msg = verify_email_otp(email, otp)
                 if is_verified:
@@ -210,6 +211,10 @@ def verify_otp(request):
                 else:
                     messages.add_message(request, messages.WARNING, msg)
                     return HttpResponseRedirect(request.path_info)
+            else:
+                context['form'] = form_obj
+                messages.add_message(request, messages.WARNING, 'Invalid OTP')
+                return render(request, 'verify_otp.html', context)
                
     except Exception as e:
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
@@ -220,14 +225,18 @@ def reset_password(request):
     try:
         context = {}
         if request.method == "GET":
-            return render(request, 'reset_password.html')
+            form_obj = ResetPasswordForm()
+            context['form'] = form_obj
+            return render(request, 'reset_password.html', context)
 
         elif request.method == "POST":
             form_obj = ResetPasswordForm(data=request.POST)
             if form_obj.is_valid():
                 password = form_obj.cleaned_data['password']
-                if 'email' in request.session:
-                    email = request.session['email']
+                email = request.session.get('email')
+                if not email:
+                    messages.add_message(request, messages.WARNING, 'Session expired. Please request a new OTP.')
+                    return redirect('forgot-password')
                 
                 db_otp = CustomerOtp.objects.filter(email = email).first()
                 if db_otp:
@@ -250,6 +259,10 @@ def reset_password(request):
                 else:
                     messages.add_message(request, messages.WARNING, 'You are not verified the otp to reset the password')
                     return HttpResponseRedirect(request.path_info)
+            else:
+                context['form'] = form_obj
+                messages.add_message(request, messages.WARNING, 'Invalid password')
+                return render(request, 'reset_password.html', context)
     
     
 
@@ -265,18 +278,27 @@ def view_profile(request):
     context['data'] = cust_obj
     return render(request,'profile.html',context)
 
+
+def get_cart_line_total(cart_item):
+    return cart_item.product_variation.price * cart_item.quantity
+
+
+def get_cart_totals(cart_obj):
+    total = 0
+    total_items = 0
+    for item in cart_obj:
+        total += get_cart_line_total(item)
+        total_items += item.quantity
+    grand_total = total + 40 # Delivery fee
+    return total, total_items, grand_total
+
+
 # user cart
 def view_cart(request):
     context = {}
-    total = 0
-    total_items = 0
     customer_id = request.user.id
     cart_obj = Cart.objects.filter(user_id=customer_id).all()
-    for item in cart_obj:
-        item.product_variation.price *= item.quantity
-        total += item.product_variation.price
-        total_items += item.quantity
-    grand_total = total + 40 # Delivery fee
+    total, total_items, grand_total = get_cart_totals(cart_obj)
     context['data'] = cart_obj
     context['total'] = int(total)
     context['total_items'] = int(total_items)
@@ -287,9 +309,11 @@ def view_cart(request):
 # items adding to cart
 def add_to_cart(request):
     if request.user.is_authenticated:
-        prod_var_id = request.GET['val']
+        prod_var_id = request.GET.get('val')
         customer = request.user.id
         prod_var_obj = ProductVariation.objects.filter(id=prod_var_id).first()
+        if not prod_var_obj:
+            return JsonResponse({'success':4})
         if prod_var_id:
             cart_obj, created = Cart.objects.get_or_create(product_variation_id=prod_var_id,user_id=customer, product_id=prod_var_obj.product_id)
             if created:
@@ -361,18 +385,10 @@ def cart_plus_minus(request):
     if int(val) == 1:
         if cart_obj.quantity < product_variation_obj.quantity and cart_obj.quantity < 5:
             cart_obj.quantity += 1
-            cart_obj.product_variation.price *= cart_obj.quantity
             cart_obj.save()
-            # total cart items price
-            total = 0
-            total_items = 0
             obj = Cart.objects.filter(user_id=customer_id)
-            for item in obj:
-                item.product_variation.price *= item.quantity
-                total += item.product_variation.price
-                total_items += item.quantity
-            grand_total = total + 40 # Delivery fee
-            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product_variation.price,'success':1,'total':total, 'total_items':total_items, 'grand_total':grand_total}
+            total, total_items, grand_total = get_cart_totals(obj)
+            data = {'cart_qty':cart_obj.quantity,'cart_price':get_cart_line_total(cart_obj),'success':1,'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
         else:
             return JsonResponse('outof stock',safe=False)
@@ -380,29 +396,15 @@ def cart_plus_minus(request):
         cart_obj.quantity -= 1
         if cart_obj.quantity == 0:
             cart_obj.delete()
-            total = 0
-            total_items = 0
             obj = Cart.objects.filter(user_id=customer_id)
-            for item in obj:
-                item.product_variation.price *= item.quantity
-                total += item.product_variation.price
-                total_items += item.quantity
-            grand_total = total + 40 # Delivery fee
+            total, total_items, grand_total = get_cart_totals(obj)
             data = {'cart_qty':0, 'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
         else:
-            cart_obj.product_variation.price *= cart_obj.quantity
             cart_obj.save()
-            # total cart items price
-            total = 0
-            total_items = 0
             obj = Cart.objects.filter(user_id=customer_id)
-            for item in obj:
-                item.product_variation.price *= item.quantity
-                total += item.product_variation.price
-                total_items += item.quantity
-            grand_total = total + 40 # Delivery fee
-            data = {'cart_qty':cart_obj.quantity,'cart_price':cart_obj.product_variation.price,'total':total, 'total_items':total_items, 'grand_total':grand_total}
+            total, total_items, grand_total = get_cart_totals(obj)
+            data = {'cart_qty':cart_obj.quantity,'cart_price':get_cart_line_total(cart_obj),'total':total, 'total_items':total_items, 'grand_total':grand_total}
             return JsonResponse(data)
 
         
@@ -414,14 +416,8 @@ def cart_remove(request):
             cart_obj = Cart.objects.filter(user_id=customer_id, product_variation_id=product_variation_id).first()
             if cart_obj:
                 cart_obj.delete()
-                total = 0
-                total_items = 0
                 cart_obj = Cart.objects.filter(user_id=customer_id)
-                for item in cart_obj:
-                    item.product_variation.price *= item.quantity
-                    total += item.product_variation.price
-                    total_items += item.quantity
-                grand_total = total + 40 # Delivery fee
+                total, total_items, grand_total = get_cart_totals(cart_obj)
                 data = {'total':total, 'total_items':total_items, 'grand_total':grand_total, 'status': True, 'msg': 'Product removed form cart'}
                 return JsonResponse(data)
             else:
@@ -489,7 +485,7 @@ def view_checkout(request):
                         return HttpResponseRedirect(request.path_info)
                     else:
                         messages.add_message(request, messages.WARNING, msg)
-                        context, msg = get_billing_details(customer_obj)
+                        context, msg = get_billing_details(request, customer_obj)
                         if context:
                             context['line1'] = line1
                             context['line2'] = line2
@@ -502,15 +498,15 @@ def view_checkout(request):
                             return render(request, 'checkout.html', context)
                         else:
                             messages.add_message(request, messages.WARNING, msg)
-                            return redirect('view_checkout')
+                            return redirect('checkout')
                         # return HttpResponseRedirect(request.path_info)
                 else:
                     messages.add_message(request, messages.WARNING, 'Unauthorized request')
-                    return redirect('view_checkout')
+                    return redirect('checkout')
                 
             else:
                 if customer_obj:
-                    context, msg = get_billing_details(customer_obj)
+                    context, msg = get_billing_details(request, customer_obj)
                     if context:
                         return render(request,'checkout.html', context)
                     else:
@@ -544,9 +540,7 @@ def payment(request):
     #     return HttpResponse('current order is processing.Wait until it reaches to you')
     
     else:
-        for item in cart_obj:
-            item.product_variation.price *= item.quantity
-            amount += item.product_variation.price
+        amount, total_items, grand_total = get_cart_totals(cart_obj)
         amount *= 100
     
         # Create a Razorpay Order
@@ -590,11 +584,8 @@ def paymenthandler(request):
             result = razor_pay_client.utility.verify_payment_signature(
                 params_dict)
             if result is None:
-                amount = 0
                 cart_obj = Cart.objects.filter(user_id=request.user.id)
-                for item in cart_obj:
-                    item.product_variation.price *= item.quantity
-                    amount += item.product_variation.price
+                amount, total_items, grand_total = get_cart_totals(cart_obj)
                 amount *= 100  
                 try:
 
@@ -616,7 +607,7 @@ def paymenthandler(request):
                                                                            product_variation=item.product_variation,
                                                                            order=new_order,
                                                                            quantity=item.quantity,
-                                                                           amount=item.product_variation.price)
+                                                                           amount=get_cart_line_total(item))
                             new_order_detail.save()
                         cart_obj.delete()
                         
@@ -625,7 +616,7 @@ def paymenthandler(request):
                         order_detail_obj = OrderDetails.objects.filter(order_id=new_order.id)
                         for order_detail in order_detail_obj:
                             product_variation_obj = ProductVariation.objects.filter(id=order_detail.product_variation_id).first()
-                            product_variation_obj.quantity -= item.quantity
+                            product_variation_obj.quantity -= order_detail.quantity
                             product_variation_obj.save()
                         
                             if product_variation_obj.quantity == 0:
@@ -672,7 +663,7 @@ def order(request):
         status = 0
         order_pr_obj = OrderDetails.objects.filter(order_id=order_id)
         for order_item in order_pr_obj:
-            status += order_item.order.status
+            status += order_item.order.order_status
             break
         context['status'] = status
         context['order_id'] = order_id
@@ -685,7 +676,7 @@ def cancel_order(request):
     order_id = request.POST['order_id']
 
     order_obj = Order.objects.get(id=order_id)
-    order_obj.status = 5
+    order_obj.order_status = 5
     order_obj.save()
     return JsonResponse('hai',safe=False)
 
@@ -756,17 +747,17 @@ def update_billing_details(request):
                         # return HttpResponseRedirect(request.path_info)
                 else:
                     messages.add_message(request, messages.WARNING, 'Unauthorized request')
-                    return redirect('view_checkout')
+                    return redirect('checkout')
         else:
             messages.add_message(request, messages.WARNING, 'Please login to continue..')
-            return redirect('view_checkout')
+            return redirect('checkout')
         
     
     
     except Exception as e:
         print('Error in checkout page :: ', e)
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
-        return redirect('view_checkout')
+        return redirect('checkout')
         
 
 def generate_otp():
@@ -883,7 +874,7 @@ def validate_address(line1, line2, landmark, city, state, zipcode, first_name=No
         return False, 'Error'
     
     
-def get_billing_details(customer_obj):
+def get_billing_details(request, customer_obj):
     try:
         context = {}
         data = []
@@ -895,29 +886,16 @@ def get_billing_details(customer_obj):
         # checking cart is empty or not
         if cart_obj:
             address_obj = Address.objects.filter(customer_id = customer_id).first()
-            # for item in cart_obj:
-            #     if item.quantity <= item.product_variation.quantity:
-            #         item.product_variation.price *= item.quantity
-            #         total += item.product_variation.price
-            #         car_obj = Cart.objects.filter(user_id=customer_id)
-            #     elif item.product_variation.quantity == 0:
-            #         item.delete()
-            #         # cart object without outof stock product
-            #         car_obj = Cart.objects.filter(user_id=customer_id)
-            #     else:
-            #         item.quantity = item.product_variation.quantity
-            #         item.save()
             subtotal_price = 0
             for product in cart_obj:
                 if product.quantity > product.product_variation.quantity:
-                    messages.add_message(request, messages.WARNING, 'Some products in your cart is out of stock for now. Please remove them to checkout.')
-                    return redirect('cart')
+                    return None, 'Some products in your cart are out of stock for now. Please remove them to checkout.'
                 else:
                     temp_data = {}
                     temp_data['product_name'] = product.product.pr_name
-                    temp_data['total_per_item'] = product.product_variation.price * product.quantity
+                    temp_data['total_per_item'] = get_cart_line_total(product)
                     # print('temp_data---->>',temp_data)
-                    subtotal_price += product.product_variation.price * product.quantity
+                    subtotal_price += get_cart_line_total(product)
                     
                     data.append(temp_data)
 
@@ -939,9 +917,7 @@ def get_billing_details(customer_obj):
             context['data'] = data
 
             
-            for item in cart_obj:
-                item.product_variation.price *= item.quantity
-                amount += item.product_variation.price
+            amount, total_items, grand_total = get_cart_totals(cart_obj)
             amount *= 100
         
             # Create a Razorpay Order
