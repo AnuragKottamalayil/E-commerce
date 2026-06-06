@@ -10,6 +10,7 @@ urlpatterns = [
     path('reset-password/',reset_password,name='reset-password'),
     path('profile/',view_profile,name='profile'),
     path('cart/',view_cart,name='cart'),
+    path('address/',update_address,name='address'),
     path('products/add_to_cart/',add_to_cart,name='add_to_cart'),
     path('profile/edit_profile/',edit_profile,name='edit_profile'),
     path('edit_profile_from_checkout/',edit_profile_from_checkout,name='edit_profile_from_checkout'),
@@ -20,6 +21,7 @@ urlpatterns = [
     path('checkout/paymenthandler/',paymenthandler,name='paymenthandler'),
     path('order/',order,name='order'),
     path('order/cancel_order/',cancel_order,name='cancel_order'),
+    path('update_billing_details/',update_billing_details,name='update_billing_details'),
 
 
 ]

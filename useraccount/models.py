@@ -1,4 +1,6 @@
 
+from pyexpat import model
+from unittest.util import _MAX_LENGTH
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from products.models import Products, ProductVariation
@@ -72,3 +74,4 @@ class Address(models.Model):
     city = models.CharField(max_length=100, verbose_name='City')
     zipcode = models.IntegerField(verbose_name='Pincode')
     state = models.CharField(max_length=200, null=True)
+    landmark = models.CharField(max_length=200, null=True, blank=True, verbose_name='Landmark')

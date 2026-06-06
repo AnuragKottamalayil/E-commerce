@@ -1,4 +1,5 @@
 from datetime import timedelta
+from multiprocessing import context
 import razorpay
 from django.shortcuts import redirect, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -110,6 +111,77 @@ def forgot_password(request):
                 return HttpResponseRedirect(request.path_info)
 
     except Exception as e:
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return HttpResponseRedirect(request.path_info)
+
+# Add or Update adrress
+def update_address(request):
+    try:
+        if request.user.is_authenticated:
+            context = {}
+            customer_id = request.user.id
+            if request.method == 'GET':
+                address_oject = Address.objects.filter(customer_id = customer_id).first()
+                if address_oject:
+                    context['line1'] = address_oject.line1
+                    context['line2'] = address_oject.line2
+                    context['city'] = address_oject.city
+                    context['state'] = address_oject.state
+                    context['zipcode'] = address_oject.zipcode
+                    context['landmark'] = address_oject.landmark if address_oject.landmark else ''
+                return render(request, 'address.html', context)
+            elif request.method == 'POST':
+                line1 = request.POST.get('line_1')
+                line2 = request.POST.get('line_2')
+                landmark = request.POST.get('landmark')
+                city = request.POST.get('city')
+                state = request.POST.get('state')
+                zipcode = request.POST.get('zipcode')
+                valid_address, msg = validate_address(line1, line2, landmark, city, state, zipcode)
+                if valid_address:
+                    db_address = Address.objects.filter(customer_id = customer_id).first()
+                    if db_address:
+                        db_address.line1 = line1
+                        db_address.line2 = line2
+                        db_address.landmark = landmark
+                        db_address.city = city
+                        db_address.state = state
+                        db_address.zipcode = zipcode
+                        db_address.save()
+                        msg = 'Address updated successfully'
+                        print(msg)
+                    else:
+                        new_address = Address.objects.create(
+                                      customer_id = customer_id, 
+                                      line1 = line1,
+                                      line2 = line2,
+                                      landmark = landmark,
+                                      city = city,
+                                      state = state,
+                                      zipcode = zipcode
+                                      )
+                        new_address.save()
+                        msg = 'New address added successfully'
+                        print(msg)
+                        
+                    messages.add_message(request, messages.SUCCESS, msg)
+                    # return render(request, 'reset_password.html', context)
+                    return HttpResponseRedirect(request.path_info)
+                else:
+                    messages.add_message(request, messages.WARNING, msg)
+                    context['line1'] = line1
+                    context['line2'] = line2
+                    context['city'] = city
+                    context['state'] = state
+                    context['zipcode'] = zipcode
+                    context['landmark'] = landmark
+                    return render(request, 'address.html', context)
+                    # return HttpResponseRedirect(request.path_info)
+        else:
+            messages.add_message(request, messages.WARNING, 'Please login to continue..')
+            return redirect('address')
+    except Exception as e:
+        print("Error ", e)
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
         return HttpResponseRedirect(request.path_info)
 
@@ -367,101 +439,91 @@ def cart_remove(request):
 # check out page
 def view_checkout(request):
     try:
-        if request.user.is_authenticated:  
-            context = {}
-            data = []
-            amount = 0
-            currency = 'INR'
+        if request.user.is_authenticated:
             customer_id = request.user.id
             customer_obj = LoginTable.objects.filter(id=customer_id).first()
-            if customer_obj:
-                cart_obj = Cart.objects.select_related('product').filter(user_id=customer_id).all()
-                # print('cartobj   ',cart_obj)
-                # checking cart is empty or not
-                if cart_obj:
-                    address_obj = Address.objects.filter(customer_id = customer_id).first()
-                    # for item in cart_obj:
-                    #     if item.quantity <= item.product_variation.quantity:
-                    #         item.product_variation.price *= item.quantity
-                    #         total += item.product_variation.price
-                    #         car_obj = Cart.objects.filter(user_id=customer_id)
-                    #     elif item.product_variation.quantity == 0:
-                    #         item.delete()
-                    #         # cart object without outof stock product
-                    #         car_obj = Cart.objects.filter(user_id=customer_id)
-                    #     else:
-                    #         item.quantity = item.product_variation.quantity
-                    #         item.save()
-                    subtotal_price = 0
-                    for product in cart_obj:
-                        if product.quantity > product.product_variation.quantity:
-                            messages.add_message(request, messages.WARNING, 'Some products in your cart is out of stock for now. Please remove them to checkout.')
-                            return redirect('cart')
+            if request.method == 'POST':
+                context = {}
+                if customer_obj:
+                    line1 = request.POST.get('line_1')
+                    line2 = request.POST.get('line_2')
+                    landmark = request.POST.get('landmark')
+                    city = request.POST.get('city')
+                    state = request.POST.get('state')
+                    zipcode = request.POST.get('zipcode')
+                    first_name = request.POST.get('first_name')
+                    last_name = request.POST.get('last_name')
+                    valid_address, msg = validate_address(line1, line2, landmark, city, state, zipcode, first_name, last_name, True)
+                    if valid_address:
+                        db_address = Address.objects.filter(customer_id = customer_id).first()
+                        if db_address:
+                            db_address.line1 = line1
+                            db_address.line2 = line2
+                            db_address.landmark = landmark
+                            db_address.city = city
+                            db_address.state = state
+                            db_address.zipcode = zipcode
+                            db_address.save()
+                            msg = 'Billing details updated successfully'
+                            print(msg)
                         else:
-                            temp_data = {}
-                            temp_data['product_name'] = product.product.pr_name
-                            temp_data['total_per_item'] = product.product_variation.price * product.quantity
-                            # print('temp_data---->>',temp_data)
-                            subtotal_price += product.product_variation.price * product.quantity
-                            
-                            data.append(temp_data)
-
-                    if address_obj:
-                        context['line1'] = address_obj.line1
-                        context['line2'] = address_obj.line2
-                        context['city'] = address_obj.city
-                        context['zipcode'] = address_obj.zipcode
-                        context['state'] = address_obj.state
-
-                    context['first_name'] = customer_obj.first_name
-                    context['last_name'] = customer_obj.last_name
-                    context['email'] = customer_obj.email
-                    context['phone_no'] = customer_obj.phone_no
-                    context['total_price'] = subtotal_price  + 40 # Delivery fee
-                    context['subtotal_price'] = subtotal_price
-    
-                    context['data'] = data
-
-                    
-                    for item in cart_obj:
-                        item.product_variation.price *= item.quantity
-                        amount += item.product_variation.price
-                    amount *= 100
-                
-                    # Create a Razorpay Order
-                    razorpay_order = razor_pay_client.order.create(dict(amount=amount,
-                                                                    currency=currency,
-                                                                    payment_capture='0'))
-                
-                    # order id of newly created order.
-                    razorpay_order_id = razorpay_order['id']
-                    callback_url = 'paymenthandler/'
-                
-                    # we need to pass these details to frontend.
-    
-                    context['razorpay_order_id'] = razorpay_order_id
-                    context['razorpay_merchant_key'] = settings.RAZOR_KEY_ID
-                    context['razorpay_amount'] = amount/100
-                    context['currency'] = currency
-                    context['callback_url'] = callback_url
-                    context['email'] = customer_obj.email
-                    context['phone'] = customer_obj.phone_no
-
-                    # print(context)
-                    # context['data'] = car_obj
-                    return render(request,'checkout.html', context)
+                            new_address = Address.objects.create(
+                                        customer_id = customer_id, 
+                                        line1 = line1,
+                                        line2 = line2,
+                                        landmark = landmark,
+                                        city = city,
+                                        state = state,
+                                        zipcode = zipcode
+                                        )
+                            new_address.save()
+                            msg = 'New billing details added successfully'
+                            print(msg)
+                        
+                        customer_obj.first_name = first_name
+                        customer_obj.last_name = last_name
+                        customer_obj.save()
+                        
+                        messages.add_message(request, messages.SUCCESS, msg)
+                        # return render(request, 'reset_password.html', context)
+                        return HttpResponseRedirect(request.path_info)
+                    else:
+                        messages.add_message(request, messages.WARNING, msg)
+                        context, msg = get_billing_details(customer_obj)
+                        if context:
+                            context['line1'] = line1
+                            context['line2'] = line2
+                            context['city'] = city
+                            context['state'] = state
+                            context['zipcode'] = zipcode
+                            context['landmark'] = landmark
+                            context['first_name'] = first_name
+                            context['last_name'] = last_name
+                            return render(request, 'checkout.html', context)
+                        else:
+                            messages.add_message(request, messages.WARNING, msg)
+                            return redirect('view_checkout')
+                        # return HttpResponseRedirect(request.path_info)
                 else:
-                    print('not')
-                    messages.add_message(request, messages.WARNING, 'Your cart is empty. Please add some products to continue..')
-                    return redirect('cart')
+                    messages.add_message(request, messages.WARNING, 'Unauthorized request')
+                    return redirect('view_checkout')
+                
             else:
-                messages.add_message(request, messages.WARNING, 'Unauthorized request')
-                return redirect('cart')
+                if customer_obj:
+                    context, msg = get_billing_details(customer_obj)
+                    if context:
+                        return render(request,'checkout.html', context)
+                    else:
+                        messages.add_message(request, messages.WARNING, msg)
+                        return redirect('cart')
+                else:
+                    messages.add_message(request, messages.WARNING, 'Unauthorized request')
+                    return redirect('cart')
         else:
             messages.add_message(request, messages.WARNING, 'Please login to continue..')
             return redirect('cart')
     except Exception as e:
-        print(e)
+        print('Error in checkout page :: ',e)
         messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
         return redirect('cart')
 
@@ -627,6 +689,86 @@ def cancel_order(request):
     order_obj.save()
     return JsonResponse('hai',safe=False)
 
+
+def update_billing_details(request):
+    try:
+        if request.user.is_authenticated:
+            context = {}
+            customer_id = request.user.id
+            if request.method == 'POST':
+                customer_obj = LoginTable.objects.filter(id=customer_id).first()
+                if customer_obj:
+                    line1 = request.POST.get('line_1')
+                    line2 = request.POST.get('line_2')
+                    landmark = request.POST.get('landmark')
+                    city = request.POST.get('city')
+                    state = request.POST.get('state')
+                    zipcode = request.POST.get('zipcode')
+                    first_name = request.POST.get('first_name')
+                    last_name = request.POST.get('last_name')
+                    valid_address, msg = validate_address(line1, line2, landmark, city, state, zipcode, first_name, last_name, True)
+                    if valid_address:
+                        db_address = Address.objects.filter(customer_id = customer_id).first()
+                        if db_address:
+                            db_address.line1 = line1
+                            db_address.line2 = line2
+                            db_address.landmark = landmark
+                            db_address.city = city
+                            db_address.state = state
+                            db_address.zipcode = zipcode
+                            db_address.save()
+                            msg = 'Address updated successfully'
+                            print(msg)
+                        else:
+                            new_address = Address.objects.create(
+                                        customer_id = customer_id, 
+                                        line1 = line1,
+                                        line2 = line2,
+                                        landmark = landmark,
+                                        city = city,
+                                        state = state,
+                                        zipcode = zipcode
+                                        )
+                            new_address.save()
+                            msg = 'New address added successfully'
+                            print(msg)
+                        
+                        customer_obj.first_name = first_name
+                        customer_obj.last_name = last_name
+                        customer_obj.save()
+                        
+                        messages.add_message(request, messages.SUCCESS, msg)
+                        # return render(request, 'reset_password.html', context)
+                        return HttpResponseRedirect(request.path_info)
+                    else:
+                        messages.add_message(request, messages.WARNING, msg)
+                        context['line1'] = line1
+                        context['line2'] = line2
+                        context['city'] = city
+                        context['state'] = state
+                        context['zipcode'] = zipcode
+                        context['landmark'] = landmark
+                        context['first_name'] = first_name
+                        context['last_name'] = last_name
+                        context['email'] = customer_obj.email
+                        context['phone_no'] = customer_obj.phone_no
+                        return render(request, 'checkout.html', context)
+                        # return HttpResponseRedirect(request.path_info)
+                else:
+                    messages.add_message(request, messages.WARNING, 'Unauthorized request')
+                    return redirect('view_checkout')
+        else:
+            messages.add_message(request, messages.WARNING, 'Please login to continue..')
+            return redirect('view_checkout')
+        
+    
+    
+    except Exception as e:
+        print('Error in checkout page :: ', e)
+        messages.add_message(request, messages.WARNING, 'An internal error occurred during operation')
+        return redirect('view_checkout')
+        
+
 def generate_otp():
     numbers = '1234567890'
     ot = random.choices(numbers, k = 4)
@@ -675,3 +817,155 @@ def verify_email_otp(email, otp):
     except Exception as e:
         print('error-------->>',e)
         return False, 'Error while verifying otp'
+    
+def validate_length(param, field):
+    if len(param) < 2:
+        if not field == 'Last name':
+            return False, field + ' ' + 'should contain at least 2 charactors'
+    if len(param) > 200:
+        return False, field + ' ' + 'should contain at most 200 charactors'
+    
+    return True, 'Success'
+    
+def validate_address(line1, line2, landmark, city, state, zipcode, first_name=None, last_name=None, name_requred=False):
+    try:
+        if name_requred == True:
+            if first_name and last_name:
+                valid_length, msg = validate_length(first_name, 'First name')
+                if valid_length:
+                    valid_length, msg = validate_length(last_name, 'Last name')
+                    if valid_length:
+                        pass
+                    else:
+                        return False, msg
+                else:
+                    return False, msg
+            else:
+                return False, 'Please fill all mandatory fields to continue'
+        
+        if line1 and line2 and city and state and zipcode:
+            valid_length, msg = validate_length(line1, 'Address line1')
+            if valid_length:
+                valid_length, msg = validate_length(line2, 'Address line2')
+                if valid_length:
+                    valid_length, msg = validate_length(city, 'City')
+                    if valid_length:
+                        valid_length, msg = validate_length(state, 'State')
+                        if valid_length:
+                            if zipcode.isnumeric():
+                                if len(zipcode) > 5:
+                                    if len(zipcode) < 7:
+                                        if landmark:
+                                            valid_length, msg = validate_length(landmark, 'Landmark')
+                                            if not valid_length:
+                                                return False, msg
+                                    else:
+                                        return False, 'Zipcode should contain at most 6 digits'
+                                else:
+                                    return False, 'Zipcode should contain at least 5 digits'
+                            else:
+                                return False, 'Invalid zipcode'
+                        else:
+                            return False, msg
+                    else:
+                        return False, msg
+                else:
+                    return False, msg
+            else:
+                return False, msg
+        else:
+            return False, 'Please fill all mandatory fields to continue' 
+        
+        return True, 'Success'
+           
+    except Exception as e:
+        print("Error while validating address")
+        return False, 'Error'
+    
+    
+def get_billing_details(customer_obj):
+    try:
+        context = {}
+        data = []
+        amount = 0
+        currency = 'INR'
+        customer_id = customer_obj.id
+        cart_obj = Cart.objects.select_related('product').filter(user_id=customer_id).all()
+        # print('cartobj   ',cart_obj)
+        # checking cart is empty or not
+        if cart_obj:
+            address_obj = Address.objects.filter(customer_id = customer_id).first()
+            # for item in cart_obj:
+            #     if item.quantity <= item.product_variation.quantity:
+            #         item.product_variation.price *= item.quantity
+            #         total += item.product_variation.price
+            #         car_obj = Cart.objects.filter(user_id=customer_id)
+            #     elif item.product_variation.quantity == 0:
+            #         item.delete()
+            #         # cart object without outof stock product
+            #         car_obj = Cart.objects.filter(user_id=customer_id)
+            #     else:
+            #         item.quantity = item.product_variation.quantity
+            #         item.save()
+            subtotal_price = 0
+            for product in cart_obj:
+                if product.quantity > product.product_variation.quantity:
+                    messages.add_message(request, messages.WARNING, 'Some products in your cart is out of stock for now. Please remove them to checkout.')
+                    return redirect('cart')
+                else:
+                    temp_data = {}
+                    temp_data['product_name'] = product.product.pr_name
+                    temp_data['total_per_item'] = product.product_variation.price * product.quantity
+                    # print('temp_data---->>',temp_data)
+                    subtotal_price += product.product_variation.price * product.quantity
+                    
+                    data.append(temp_data)
+
+            if address_obj:
+                context['line1'] = address_obj.line1
+                context['line2'] = address_obj.line2
+                context['city'] = address_obj.city
+                context['zipcode'] = address_obj.zipcode
+                context['state'] = address_obj.state
+                context['landmark'] = address_obj.landmark
+
+            context['first_name'] = customer_obj.first_name
+            context['last_name'] = customer_obj.last_name
+            context['email'] = customer_obj.email
+            context['phone_no'] = customer_obj.phone_no
+            context['total_price'] = subtotal_price  + 40 # Delivery fee
+            context['subtotal_price'] = subtotal_price
+
+            context['data'] = data
+
+            
+            for item in cart_obj:
+                item.product_variation.price *= item.quantity
+                amount += item.product_variation.price
+            amount *= 100
+        
+            # Create a Razorpay Order
+            razorpay_order = razor_pay_client.order.create(dict(amount=amount,
+                                                            currency=currency,
+                                                            payment_capture='0'))
+        
+            # order id of newly created order.
+            razorpay_order_id = razorpay_order['id']
+            callback_url = 'paymenthandler/'
+        
+            # we need to pass these details to frontend.
+
+            context['razorpay_order_id'] = razorpay_order_id
+            context['razorpay_merchant_key'] = settings.RAZOR_KEY_ID
+            context['razorpay_amount'] = amount/100
+            context['currency'] = currency
+            context['callback_url'] = callback_url
+            context['email'] = customer_obj.email
+            context['phone'] = customer_obj.phone_no
+
+            return context, 'Success'
+        else:
+            return None, 'Your cart is empty. Please add some products to continue..'
+
+    except:
+        return None, 'Internal error'
